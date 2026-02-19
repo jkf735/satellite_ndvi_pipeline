@@ -1,0 +1,38 @@
+# -----------------------------
+# Python / Scripts
+# -----------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env               # local environment variables / credentials
+*.log               # log files
+
+# -----------------------------
+# Data folders (large / generated)
+# -----------------------------
+data/raw/
+data/processed/
+data/qa/
+*.tif               # large raster files
+*.gpkg              # local geopackage files
+*.shp               # shapefiles (if downloading raw)
+*.dbf
+*.prj
+*.shx
+*.cpg
+
+# -----------------------------
+# Docker / local container artifacts
+# -----------------------------
+docker/postgis/init/*.bak
+docker/postgis/init/*.tmp
+docker/postgis/init/*.swp
+
+# -----------------------------
+# OS-specific / editor files
+# -----------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
