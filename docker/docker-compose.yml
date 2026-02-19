@@ -1,0 +1,30 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: geo_postgis
+    environment:
+      POSTGRES_DB: geo
+      POSTGRES_USER: geo_user
+      POSTGRES_PASSWORD: geo_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./postgis/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geo_user -d geo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer
+    container_name: geo_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgis:
+        condition: service_healthy
+
+volumes:
+  postgis_data:
