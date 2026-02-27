@@ -4,12 +4,7 @@ import os
 #TODO NOT USING CURRENTLY BUT WILL NEED IF BANDS HAVE DIFFERENT RESOLUTION (CURRENTLY BOTH 10m)
 from rasterio.enums import Resampling
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
-
-RED_PATH = os.path.join(PROJECT_ROOT, "data", "raw", "2025-11-14_B04.jp2")
-NIR_PATH = os.path.join(PROJECT_ROOT, "data", "raw", "2025-11-14_B08.jp2")
-OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "2025-11-14_ndvi.tif")
+from resources.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
 def compute_ndvi(red_path:str, nir_path:str, output_path:str)->None:
 
@@ -56,5 +51,7 @@ def compute_ndvi(red_path:str, nir_path:str, output_path:str)->None:
 
 
 if __name__ == "__main__":
-    # print(RED_PATH)
-    compute_ndvi(RED_PATH, NIR_PATH, OUTPUT_PATH)
+    output_path = PROCESSED_DATA_DIR / "2025-11-14_ndvi.tif"
+    red_path = RAW_DATA_DIR / "2025-11-14_B04.jp2"
+    nir_path = RAW_DATA_DIR / "2025-11-14_B08.jp2"
+    compute_ndvi(red_path, nir_path, output_path)

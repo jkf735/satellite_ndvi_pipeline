@@ -8,14 +8,14 @@ import geopandas as gpd
 from sqlalchemy import create_engine, text
 from shapely.ops import unary_union
 
-from config import RESOURCE_DIR, SENTINEL_PATH, RAW_BANDS_DIR, DB_URI
+from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_BANDS_DIR, DB_URI
 
 logger = logging.getLogger("tile_ingets")
 
 class AWS_INTERFACE:
     def __init__(self):
         try:
-            with open(os.path.join(RESOURCE_DIR, "tile_info_cache.json"), 'r', encoding='utf-8') as f:
+            with open(RESOURCE_DIR / "tile_info_cache.json", 'r', encoding='utf-8') as f:
                 self.tile_day_cache = json.load(f)
             self.tile_case_from_file = True
             logger.info("Successfully loadded tile_day_cache from resources")
@@ -216,10 +216,10 @@ def ingest_tiles(park:str, year, month):
             }
             logger.info(f"Attempting to download bands for tile {tile}...")
             aws_interface.download_tile_jp2s(tile_data, output_path)
-            if aws_interface.tile_case_from_file:
-                logger.info(f"Updating tile_info_cashe file with new tile info")
-                with open(os.path.join(RESOURCE_DIR, "tile_info_cache.json"), 'w') as f:
-                    json.dump(aws_interface.tile_day_cache, indent=4)
+        if aws_interface.tile_case_from_file:
+            logger.info(f"Updating tile_info_cashe file with new tile info")
+            with open(os.path.join(RESOURCE_DIR, "tile_info_cache.json"), 'w') as f:
+                json.dump(aws_interface.tile_day_cache, RESOURCE_DIR / "tile_info_cache.json", indent=4)
     else:
         logger.info(f'Required tiles ({combo}) exist for {park} on {year}-{month}')
 
@@ -237,7 +237,6 @@ if __name__ == "__main__":
     parser.add_argument("--park", type=str, required=True)
     parser.add_argument("--year", type=int, required=True)
     parser.add_argument("--month", type=int, required=True)
-
     args = parser.parse_args()
     logging.info(f'STARTING TILE INGEST FOR {args.park}, {args.year}, {args.month}')
     ingest_tiles(args.park, args.year, args.month)

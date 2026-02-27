@@ -4,15 +4,7 @@ import geopandas as gpd
 from rasterio.mask import mask
 from sqlalchemy import create_engine, text
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
-
-NDVI_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "2025-11-14_ndvi.tif")
-OUTPUT_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "2025-11-14_ndvi_yosemite.tif")
-
-# Update with your PostGIS connection
-DB_URI = "postgresql://geo_user:geo_pass@localhost:5432/geo"
-
+from resources.config import DB_URI, PROCESSED_DATA_DIR
 
 def clip_ndvi_to_park(park_name):
     # Connect to PostGIS
@@ -31,7 +23,7 @@ def clip_ndvi_to_park(park_name):
     if gdf.empty:
         raise ValueError("No Yosemite geometry found in database.")
 
-    with rasterio.open(NDVI_PATH) as src:
+    with rasterio.open(PROCESSED_DATA_DIR / "2025-11-14_ndvi.tif") as src:
         raster_crs = src.crs
 
         # Reproject park to raster CRS
@@ -54,10 +46,10 @@ def clip_ndvi_to_park(park_name):
             "transform": out_transform
         })
 
-    with rasterio.open(OUTPUT_PATH, "w", **out_meta) as dest:
+    with rasterio.open(PROCESSED_DATA_DIR / "2025-11-14_ndvi_yosemite.tif", "w", **out_meta) as dest:
         dest.write(out_image)
 
-    print(f"Clipped NDVI written to {OUTPUT_PATH}")
+    print(f"Clipped NDVI written to {PROCESSED_DATA_DIR / "2025-11-14_ndvi_yosemite.tif"}")
 
 
 if __name__ == "__main__":
