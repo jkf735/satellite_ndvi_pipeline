@@ -10,7 +10,7 @@ INGEST_LOG_FILE=$(LOG_DIR)/ingest.log
 QA_LOG_FILE=$(LOG_DIR)/qa_$(shell date +%Y%m%d_%H%M%S).log
 
 
-.PHONY: up down reset logs psql ingest qa
+.PHONY: up down reset logs psql ingest_table ingest_tiles qa_table
 
 up:
 	docker compose -f docker/docker-compose.yml up -d
@@ -34,7 +34,7 @@ clean_logs:
 
 INGEST_FILE ?= data/raw/nps_boundary.geojson
 INGEST_TABLE ?= parks_raw
-ingest: clean_logs
+ingest_table: clean_logs
 	@mkdir -p $(LOG_DIR)
 	@echo "===== INGEST START $$(date) =====" | tee -a $(INGEST_LOG_FILE)
 	@ogr2ogr \
@@ -47,7 +47,15 @@ ingest: clean_logs
 	-overwrite 2>&1 | tee -a $(INGEST_LOG_FILE)
 	@echo "===== INGEST END $$(date) =====" | tee -a $(INGEST_LOG_FILE)
 
-qa: clean_logs
+ingest_tiles: clean_logs
+	@if [ -z "$(PARK)" ] || [ -z "$(YEAR)" ] || [ -z "$(MONTH)" ]; then \
+		echo "ERROR: Must provide PARK, YEAR, and MONTH"; \
+		echo "Usage: make ingest_tiles PARK=Yosemite YEAR=2025 MONTH=11"; \
+	else \
+		python3 scripts/tile_ingest.py --park $(PARK) --year $(YEAR) --month $(MONTH); \
+	fi
+
+qa_table: clean_logs
 	@mkdir -p $(LOG_DIR)
 	@echo "===== QA START $$(date) =====" | tee -a $(QA_LOG_FILE)
 	-docker exec -i geo_postgis psql -U geo_user -d geo < sql/qa/01_parks_validation.sql >> $(QA_LOG_FILE) 2>&1
@@ -60,3 +68,4 @@ qa: clean_logs
 	docker exec -i geo_postgis psql -U geo_user -d geo -c "SELECT COUNT(*) AS validated FROM parks_validated;"
 	docker exec -i geo_postgis psql -U geo_user -d geo -c "SELECT COUNT(*) AS failures FROM parks_qa_failures;"
 	@echo "===== QA END $$(date) =====" | tee -a $(QA_LOG_FILE)
+
