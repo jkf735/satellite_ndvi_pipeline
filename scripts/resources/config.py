@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 # Project root (this file lives at project root)
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Data Paths
 DATA_DIR = PROJECT_ROOT / "data"
