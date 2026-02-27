@@ -17,12 +17,10 @@ class AWS_INTERFACE:
         try:
             with open(RESOURCE_DIR / "tile_info_cache.json", 'r', encoding='utf-8') as f:
                 self.tile_day_cache = json.load(f)
-            self.tile_case_from_file = True
-            logger.info("Successfully loadded tile_day_cache from resources")
+            logger.info(f"Successfully loadded {RESOURCE_DIR / "tile_info_cache.json"}")
         except:
             self.tile_day_cache = {}
-            self.tile_case_from_file = False
-            logger.warning("Failed to load tile_day_cache from resources")
+            logger.warning(f"Failed to load {RESOURCE_DIR / "tile_info_cache.json"}. Process will continue but may be slower than usual.")
         self.aws_bucket ="s3://sentinel-s2-l2a/tiles"
         self.aws_args = ["--no-sign-request"]
 
@@ -52,10 +50,12 @@ class AWS_INTERFACE:
 
     def tile_day_passes(self, tile_path, day, max_cloud, min_coverage) -> bool:
         """Determine if a tile for given month/day meets cloud and coverage criteria, store results"""
-        key = (tile_path, day)
         # reuse previous result
-        if key in self.tile_day_cache:
-            return self.tile_day_cache[key]
+        if self.tile_day_cache.get(tile_path):
+            if day in self.tile_day_cache[tile_path]:
+                return self.tile_day_cache[tile_path][day]
+        else:
+            self.tile_day_cache[tile_path] = {}
 
         # build the path to tileinfo.json (for simplicity just use index 0)
         tileinfo_path = f"{tile_path}{day}/0/tileInfo.json"
@@ -64,7 +64,7 @@ class AWS_INTERFACE:
         result = subprocess.run(cmd, capture_output=True, text=True)
         # missing file → fail
         if result.returncode != 0:
-            self.tile_day_cache[key] = False
+            self.tile_day_cache[tile_path][day] = False
             logger.info(f'File not found at {cmd}')
             return False
 
@@ -72,7 +72,7 @@ class AWS_INTERFACE:
         cloud = info.get("cloudyPixelPercentage", 100)
         data = info.get("dataCoveragePercentage", 0)
         passes = (cloud <= max_cloud and data >= min_coverage)
-        self.tile_day_cache[key] = passes
+        self.tile_day_cache[tile_path][day] = passes
         if not passes:
             logger.info(f'Failed Cloud or data coverage check: cloud_coverage={cloud}, data_coverage={data}')
         return passes
@@ -216,10 +216,12 @@ def ingest_tiles(park:str, year, month):
             }
             logger.info(f"Attempting to download bands for tile {tile}...")
             aws_interface.download_tile_jp2s(tile_data, output_path)
-        if aws_interface.tile_case_from_file:
-            logger.info(f"Updating tile_info_cashe file with new tile info")
-            with open(os.path.join(RESOURCE_DIR, "tile_info_cache.json"), 'w') as f:
-                json.dump(aws_interface.tile_day_cache, RESOURCE_DIR / "tile_info_cache.json", indent=4)
+        try:
+            logger.info(f"Updating {RESOURCE_DIR / "tile_info_cache.json"} with new tile info")
+            with open(RESOURCE_DIR /"tile_info_cache.json", 'w') as f:
+                json.dump(aws_interface.tile_day_cache, f, indent=4)
+        except:
+            logger.warning(f"Failed to update {RESOURCE_DIR / "tile_info_cache.json"}")
     else:
         logger.info(f'Required tiles ({combo}) exist for {park} on {year}-{month}')
 
