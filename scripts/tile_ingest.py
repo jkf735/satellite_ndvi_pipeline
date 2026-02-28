@@ -16,6 +16,7 @@ logger = logging.getLogger("tile_ingets")
 os.environ["GDAL_PAM_ENABLED"] = "NO"
 
 class AWS_INTERFACE:
+    """AWS_INTERFACE CLASS"""
     def __init__(self):
         try:
             with open(RESOURCE_DIR / "tile_info_cache.json", 'r', encoding='utf-8') as f:
@@ -27,8 +28,20 @@ class AWS_INTERFACE:
         self.aws_bucket ="s3://sentinel-s2-l2a/tiles"
         self.aws_args = ["--no-sign-request"]
 
-    def break_down_tile(self,tile)->tuple:
-        """Break down a tile string into Zone, lat and grid"""
+    def break_down_tile(self, tile:str) -> tuple:
+        """
+        Break down a tile string into Zone, lat and grid
+
+        Parameters
+        ----------
+        tile : str
+            format: zone-lat_band-grid_square
+        
+        Returns
+        ----------
+        (zone, lat_band, grid_square) : tuple
+            zone = int, lat_band = str, grid_square = str
+        """    
         try:
             zone = int(tile[0:2])
             tile = tile[2:]
@@ -39,8 +52,19 @@ class AWS_INTERFACE:
         lat_band = tile[:-2]
         return zone, lat_band, grid_square
     
-    def list_s3(self,prefix):
-        """Return list of objects/folders under S3 prefix"""
+    def list_s3(self, prefix:str) -> list:
+        """
+        Return list of objects/folders under S3 prefix
+
+        Parameters
+        ----------
+        prefix : str
+            file path to be called from aws s3 cli
+        
+        Returns
+        ----------
+        list: folders returned from s3 call
+        """  
         cmd = ["aws", "s3", "ls", prefix] + self.aws_args
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
@@ -51,8 +75,26 @@ class AWS_INTERFACE:
         folders = [l.split()[-1].replace("/", "") for l in lines if l.strip().startswith("PRE")]
         return folders
 
-    def tile_day_passes(self, tile_path, day, max_cloud, min_coverage) -> bool:
-        """Determine if a tile for given month/day meets cloud and coverage criteria, store results"""
+    def tile_day_passes(self, tile_path:str, day, max_cloud=10, min_coverage=80) -> bool:
+        """
+        Determine if a tile for given month/day meets cloud and coverage criteria, store results
+
+        Parameters
+        ----------
+        tile_path : str
+            path of s3 cli call, eg: s3://sentinel-s2-l2a/tiles/11/S/KC/2025/11/
+        day: int or str
+            day of the month being testsed (e.g. 10)
+        max_cloud: int
+            max cloud coverage allowed for tile to pass (default 10)
+        min_coverage: int
+            minimum data coverage allowed for tile to pass (default 80)
+        
+        Returns
+        ----------
+        bool: tile pass or fail
+        """
+        day = str(day)  
         # reuse previous result
         if self.tile_day_cache.get(tile_path):
             if day in self.tile_day_cache[tile_path]:
@@ -81,7 +123,28 @@ class AWS_INTERFACE:
         return passes
 
     def find_best_tile(self,tile_list:list, year, month, max_cloud=10, min_coverage=80) -> tuple:
-        """Find first L2A tile for given month/day meeting cloud and coverage criteria"""
+        """
+        Find first L2A tile for given month/day meeting cloud and coverage criteria
+
+        Parameters
+        ----------
+        tile_list : list of lists
+            list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+        year: int or str
+            year being looked at (e.g. 2025)
+        month: int or str
+            month being looked at (e.g. 11)
+        max_cloud: int
+            max cloud coverage allowed for tile to pass (default 10)
+        min_coverage: int
+            minimum data coverage allowed for tile to pass (default 80)
+        
+        Returns
+        ----------
+        (tile_combination: list, day: str): tuple
+            tile_combination: list of the best tile combination found
+            day: day of the month that worked for all tiles
+        """
         for combo in tile_list:
             logger.info(f'Checking tile combination {combo}...')
             # get all the candidate days
@@ -111,8 +174,19 @@ class AWS_INTERFACE:
         logger.warning("ABORTING RUN IN 'find_best_tile': Could Not find any tile combination that works for given park.")
         return None, None
 
-    def download_tile_jp2s(self, tile_data:dict, output_dir, bands=['B04','B08']):
-        """Download a sentinel tile for each provided band"""
+    def download_tile_jp2s(self, tile_data:dict, output_dir, bands=['B04','B08']) -> None:
+        """
+        Download a sentinel tile for each provided band
+
+        Parameters
+        ----------
+        tile_data : dict
+            tile_data = {'tile','year','month','day'}
+        output_dir:
+            directory to download files to
+        bands: list
+            list of wanted bands (B04 and B08 by default)        
+        """
         try:
             tile = tile_data['tile']
             year = tile_data['year']
@@ -135,11 +209,31 @@ class AWS_INTERFACE:
                 raise RuntimeError(result.stderr)
             logger.info(f"Successfully downloaded tile to {output}")
 
-def check_if_needed_files_exist(required_tiles, park, year, month) -> tuple:
-    """Check if any combination of needed tiles have already been downloaded"""
+
+
+def check_if_needed_files_exist(required_tiles:list, park:str, year, month) -> list:
+    """
+    Check if any combination of needed tiles have already been downloaded
+
+    Parameters
+    ----------
+    required_tiles : list of lists
+            list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+    park: str
+        park being looked at (e.g. yosemite)
+    year: int or str
+            year being looked at (e.g. 2025)
+    month: int or str
+        month being looked at (e.g. 11)
+        
+    Returns
+    ----------
+    list
+        list of the tile combination found in the parks directory (or empty list if none exist)
+    """
     folder_path = os.path.join(RAW_BANDS_DIR, park.lower())
     if not os.path.isdir(folder_path):
-        return False, None
+        return []
     files = sorted(os.listdir(folder_path))
     found_tiles = []
     for file in files:
@@ -152,11 +246,23 @@ def check_if_needed_files_exist(required_tiles, park, year, month) -> tuple:
                 found_tiles.append(file_tile)
     for combo in required_tiles:
         if set(combo).issubset(found_tiles):
-            return True, combo
-    return False, None
+            return combo
+    return []
         
 def find_tiles(park_name:str) -> list:
-    """Return list of lists of tile combinations that cover the full park area"""
+    """
+    Return list of lists of tile combinations that cover the full park area based on the sentinel_shapefile
+
+    Parameters
+    ----------
+    park_name: str
+        park being looked at (e.g. yosemite)
+        
+    Returns
+    ----------
+    list of lists
+        list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+    """
     # load sentinel shapefile
     tiles_gdf = gpd.read_file(SENTINEL_PATH)
     if tiles_gdf.empty:
@@ -199,8 +305,17 @@ def find_tiles(park_name:str) -> list:
 
     return list_of_lists
 
-def generate_tif(input_files:list, output_folder):
-    """generate a tif file for each band of given input files. If multiple files then they will be moasiced (based on band) from input file list"""
+def generate_tif(input_files:list, output_folder) -> None:
+    """
+    Generate a tif file for each band of given input files. If multiple files then they will be moasiced (based on band) from input file list
+
+    Parameters
+    ----------
+    input_files: list
+        list of input file paths
+    output_folder:
+        directory of output folder
+    """
     if len(input_files) == 0:
         logger.error("ABORTING MOSAIC IN 'generate_tif': No input files provided to generate_tif")
         raise ValueError("No input files provided to generate_tif")
@@ -265,15 +380,26 @@ def generate_tif(input_files:list, output_folder):
             src.close()
 
 
-def ingest_tiles(park:str, year, month):
-    """Full process to get .jp2 files from Sentinel into designated folders"""
+def ingest_tiles(park:str, year, month) -> None:
+    """
+    Full process to get .jp2 files from Sentinel into designated folders
+
+    Parameters
+    ----------
+    park: str
+        park being looked at (e.g. yosemite)
+    year: int or str
+            year being looked at (e.g. 2025)
+    month: int or str
+        month being looked at (e.g. 11)
+    """
     park = park.capitalize()
     # check for every possible combination of tiles that could be used to cover park area
     required_tiles = find_tiles(park)
     # check if any of those combo are already saved locally
-    files_exist, combo = check_if_needed_files_exist(required_tiles, park, year, month)
+    combo = check_if_needed_files_exist(required_tiles, park, year, month)
     # if no suitable local files, retreive them using aws s3 cli
-    if not files_exist:
+    if not combo:
         logger.info(f'No suitable combination of files are currently downloaded for {park} on {year}-{month}')
         logger.info("Searching AWS S3 for suitable tiles...")
         # Init the aws interface and search for tiles that meet our constraints
