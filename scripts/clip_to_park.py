@@ -5,7 +5,8 @@ from rasterio.mask import mask
 from sqlalchemy import create_engine, text
 
 from resources.config import DB_URI, PROCESSED_DATA_DIR
-
+#TODO previous script: combine into 1 stitch
+#TODO this file: check that stitch exists for park,year,month, take stitch and compute ndvi, then clip to park.
 def clip_ndvi_to_park(park_name):
     # Connect to PostGIS
     engine = create_engine(DB_URI)
