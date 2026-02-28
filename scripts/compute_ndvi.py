@@ -49,7 +49,7 @@ def find_files(folder, year, month) -> tuple:
     if nir_file == "":
         logger.error(f"B08 (nir) file not found in: {folder} for year:{year}, month:{month}")
         raise FileNotFoundError(f"B08 (nir) file not found in: {folder} for year:{year}, month:{month}")
-    output_file = red_file.replace('B04','NDVI')
+    output_file = red_file.replace('B04','NDVI').replace('_mosaic','')
     red_path = folder / red_file
     nir_path = folder / nir_file
     output_path = folder / output_file
@@ -124,7 +124,12 @@ def compute_ndvi_from_tif(red_path: str, nir_path: str, output_path: str) -> boo
         if mask is not None:
             ndvi[mask] = np.nan
 
+        # run QA:
+        logger.info("Running NDVI QA...")
+        ndvi_qa(ndvi)
+
         # prepare output profile
+        logger.info("Writting To Output...")
         profile = red_src.profile.copy()
         profile.update(
             driver="GTiff",
@@ -135,13 +140,65 @@ def compute_ndvi_from_tif(red_path: str, nir_path: str, output_path: str) -> boo
         )
 
     # write output
-    logger.info("Writting To Output...")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with rasterio.open(output_path, "w", **profile) as dst:
         dst.write(ndvi.astype(rasterio.float32), 1)
 
     logger.info(f"NDVI .tif Successfully written to: {output_path}")
     return True
+
+def ndvi_qa(ndvi) -> dict:
+    """
+    Perform QA on produced NDVI 
+
+    Parameters
+    ----------
+    ndvi :
+        ndvi coverage for full tiles
+    Returns
+    ----------
+    dict : {"min", "max", "mean", "std", "nodata_pct"}
+    """
+    valid_pixels = ~np.isnan(ndvi)
+    total_pixels = ndvi.size
+    valid_count = np.count_nonzero(valid_pixels)
+
+    if valid_count == 0:
+        logger.error("All NDVI pixels are NaN — check input bands.")
+        raise ValueError("All NDVI pixels are NaN — check input bands.")
+
+    ndvi_valid = ndvi[valid_pixels]
+
+    ndvi_min = float(np.nanmin(ndvi_valid))
+    ndvi_max = float(np.nanmax(ndvi_valid))
+    ndvi_mean = float(np.nanmean(ndvi_valid))
+    ndvi_std = float(np.nanstd(ndvi_valid))
+    nodata_pct = 100 * (1 - valid_count / total_pixels)
+
+    logger.info(f"\n--- NDVI QA Summary ---\nMin NDVI:  {ndvi_min:.4f}\nMax NDVI:  {ndvi_max:.4f}\nMean NDVI: {ndvi_mean:.4f}\nStd NDVI:  {ndvi_std:.4f}\nNodata %:  {nodata_pct:.2f}%\n------------------------")
+    # logger.info(f"Min NDVI:  {ndvi_min:.4f}")
+    # logger.info(f"Max NDVI:  {ndvi_max:.4f}")
+    # logger.info(f"Mean NDVI: {ndvi_mean:.4f}")
+    # logger.info(f"Std NDVI:  {ndvi_std:.4f}")
+    # logger.info(f"Nodata %:  {nodata_pct:.2f}%")
+    # logger.info("------------------------\n")
+
+    # Sanity checks
+    if ndvi_min < -1.1 or ndvi_max > 1.1:
+        logger.error("NDVI values outside expected range (-1 to 1)")
+        raise ValueError("NDVI values outside expected range (-1 to 1)")
+
+    if nodata_pct > 90:
+        logger.error("Too many nodata pixels — .tif may be invalid")
+        raise ValueError("Too many nodata pixels — .tif may be invalid")
+
+    return {
+        "min": ndvi_min,
+        "max": ndvi_max,
+        "mean": ndvi_mean,
+        "std": ndvi_std,
+        "nodata_pct": nodata_pct
+    }
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -165,4 +222,4 @@ if __name__ == "__main__":
     if complete:
         logging.info(f'COMPLETED NDVI COMPUTATION {args.park}, {args.year}, {args.month}')
     else:
-        logging.info(f'NDVI SPKIPPED: file alread exists for {args.park}, {args.year}, {args.month} at {output_path}')
+        logging.info(f'NDVI GENERATION SPKIPPED: file alread exists for {args.park}, {args.year}, {args.month} at {output_path}')
