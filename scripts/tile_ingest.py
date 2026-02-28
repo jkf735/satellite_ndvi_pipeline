@@ -4,13 +4,16 @@ import logging
 import argparse
 import itertools
 import subprocess
+import rasterio
 import geopandas as gpd
 from sqlalchemy import create_engine, text
 from shapely.ops import unary_union
+from rasterio.merge import merge
 
-from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_BANDS_DIR, DB_URI
+from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_BANDS_DIR, INTERIM_DATA_DIR, DB_URI
 
 logger = logging.getLogger("tile_ingets")
+os.environ["GDAL_PAM_ENABLED"] = "NO"
 
 class AWS_INTERFACE:
     def __init__(self):
@@ -109,6 +112,7 @@ class AWS_INTERFACE:
         return None, None
 
     def download_tile_jp2s(self, tile_data:dict, output_dir, bands=['B04','B08']):
+        """Download a sentinel tile for each provided band"""
         try:
             tile = tile_data['tile']
             year = tile_data['year']
@@ -195,18 +199,90 @@ def find_tiles(park_name:str) -> list:
 
     return list_of_lists
 
+def generate_tif(input_files:list, output_folder):
+    """generate a tif file for each band of given input files. If multiple files then they will be moasiced (based on band) from input file list"""
+    if len(input_files) == 0:
+        logger.error("ABORTING MOSAIC IN 'generate_tif': No input files provided to generate_tif")
+        raise ValueError("No input files provided to generate_tif")
+    if not os.path.isdir(output_folder):
+        os.makedirs(output_folder, exist_ok=True)
+    # sort by band into seperate lists
+    tile_dict = {}
+    for i in input_files:
+        band = str(i).split('_')[-1]
+        if not tile_dict.get(band): tile_dict[band] = []
+        tile_dict[band].append(i)
+    for band,tile_list in tile_dict.items():      
+        sources = [rasterio.open(p) for p in tile_list]
+        # if just 1 file, no mosaic needed
+        if len(sources) == 1:
+            output_file_name = str(tile_list[0]).split('/')[-1].split('_',1)[1].replace('.jp2','.tif')
+            output_path = output_folder / output_file_name
+            src = sources[0]
+            output_metadata = src.meta.copy()
+            try:
+                with rasterio.open(output_path, "w", **output_metadata) as dest:
+                    dest.write(src.read())
+                logger.info(f"Mosaic created at {output_path}")
+            except:
+                logger.warning(f"ABORTING MOSAIC IN 'generate_tif': Failed to write to {output_path}")
+        # if more than 1 then stitch tiles into mosaic before saving
+        else:
+            output_file_name = str(tile_list[0]).split('/')[-1].split('_',1)[1].replace('.jp2','_mosaic.tif')
+            output_path = output_folder / output_file_name
+            # validate
+            ref = sources[0]
+            for src in sources[1:]:
+                if src.crs != ref.crs:
+                    logger.warning(f"ABORTING MOSAIC IN 'generate_tif': CRS mismatch: {src.name} vs {ref.name}")
+                    raise ValueError(f"CRS mismatch: {src.name} vs {ref.name}")
+                if src.res != ref.res:
+                    logger.warning(f"ABORTING MOSAIC IN 'generate_tif': Resolution mismatch: {src.name} vs {ref.name}")
+                    raise ValueError(f"Resolution mismatch: {src.name} vs {ref.name}")
+                if src.count != ref.count:
+                    logger.warning(f"ABORTING MOSAIC IN 'generate_tif': Band count mismatch: {src.name} vs {ref.name}")
+                    raise ValueError(f"Band count mismatch: {src.name} vs {ref.name}")
+                if src.dtypes != ref.dtypes:
+                    logger.warning(f"ABORTING MOSAIC IN 'generate_tif': Dtype mismatch: {src.name} vs {ref.name}")
+                    raise ValueError(f"Dtype mismatch: {src.name} vs {ref.name}")
+            # merge
+            mosaic, transform = merge(sources)
+
+            output_metadata = ref.meta.copy()
+            output_metadata.update({
+                "driver": "GTiff",
+                "height": mosaic.shape[1],
+                "width": mosaic.shape[2],
+                "transform": transform,
+            })
+            try:
+                with rasterio.open(output_path, "w", **output_metadata) as dest:
+                    dest.write(mosaic)
+                logger.info(f"Mosaic created at {output_path}")
+            except:
+                logger.warning(f"ABORTING MOSAIC IN 'generate_tif': Failed to write to {output_path}")
+        for src in sources:
+            src.close()
+
+
 def ingest_tiles(park:str, year, month):
+    """Full process to get .jp2 files from Sentinel into designated folders"""
     park = park.capitalize()
+    # check for every possible combination of tiles that could be used to cover park area
     required_tiles = find_tiles(park)
+    # check if any of those combo are already saved locally
     files_exist, combo = check_if_needed_files_exist(required_tiles, park, year, month)
+    # if no suitable local files, retreive them using aws s3 cli
     if not files_exist:
         logger.info(f'No suitable combination of files are currently downloaded for {park} on {year}-{month}')
         logger.info("Searching AWS S3 for suitable tiles...")
+        # Init the aws interface and search for tiles that meet our constraints
         aws_interface = AWS_INTERFACE()
-        combo, day = aws_interface.find_best_tile(required_tiles,year,month)
+        combo, day = aws_interface.find_best_tile(required_tiles,year,month,max_cloud=10, min_coverage=80)
         if not combo or not day:
             return
         output_path = os.path.join(RAW_BANDS_DIR, park.lower())
+        # download each tile
         for tile in combo:
             tile_data = {
                 'tile': tile,
@@ -225,7 +301,40 @@ def ingest_tiles(park:str, year, month):
     else:
         logger.info(f'Required tiles ({combo}) exist for {park} on {year}-{month}')
 
-
+    # mosaic the tiles if they are not already stitched
+    interim_path = INTERIM_DATA_DIR / park.lower()
+    needed_tiles = combo.copy()
+    if os.path.isdir(interim_path):
+        files = sorted(os.listdir(interim_path))
+        found = False
+        for i in files:
+            mosaic_year = i.split('_')[0]
+            mosaic_month = i.split('_')[1]
+            if mosaic_year == str(year) and mosaic_month == str(month):
+                found = True
+        if found: needed_tiles = []
+    else:
+        os.makedirs(interim_path, exist_ok=True)
+    if not needed_tiles:
+        logger.info(f'Required mosaic tiles already exist for {park} on {year}-{month}. If you want to create a new mosaic, delete the current one and run again.')
+        return
+    # get lists of paths to files
+    tile_path = RAW_BANDS_DIR / park.lower()
+    files = sorted(os.listdir(tile_path))
+    file_list = []
+    for i in files:
+        tile_name = i.split('_')[0]
+        tile_year = i.split('_')[1]
+        tile_month = i.split('_')[2]
+        if tile_name in needed_tiles and tile_year==str(year) and tile_month==str(month):
+            file_list.append(tile_path/i)
+    if len(combo) == 1:
+        logger.info(f"Generating .tif for: {combo}")
+    else:   
+        logger.info(f"Stitching tiles together for tiles: {combo}. Then generating .tif")
+    generate_tif(file_list, interim_path)
+    
+    
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
