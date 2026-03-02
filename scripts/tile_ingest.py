@@ -455,9 +455,9 @@ def ingest_tiles(park:str, year, month) -> None:
         if tile_name in needed_tiles and tile_year==str(year) and tile_month==str(month):
             file_list.append(tile_path/i)
     if len(combo) == 1:
-        logger.info(f"Generating .tif for: {combo}")
+        logger.info(f"Generating raster for: {combo}")
     else:   
-        logger.info(f"Stitching tiles together for tiles: {combo}. Then generating .tif")
+        logger.info(f"Stitching tiles together for tiles: {combo}. Then generating raster")
     generate_tif(file_list, interim_path)
     
     

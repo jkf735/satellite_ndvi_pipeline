@@ -63,6 +63,14 @@ ndvi: clean_logs
 		python3 scripts/compute_ndvi.py --park $(PARK) --year $(YEAR) --month $(MONTH); \
 	fi
 
+clip: clean_logs
+	@if [ -z "$(PARK)" ] || [ -z "$(YEAR)" ] || [ -z "$(MONTH)" ]; then \
+		echo "ERROR: Must provide PARK, YEAR, and MONTH"; \
+		echo "Usage: make ingest_tiles PARK=Yosemite YEAR=2025 MONTH=11"; \
+	else \
+		python3 scripts/clip_to_park.py --park $(PARK) --year $(YEAR) --month $(MONTH); \
+	fi
+
 qa_table: clean_logs
 	@mkdir -p $(LOG_DIR)
 	@echo "===== QA START $$(date) =====" | tee -a $(QA_LOG_FILE)
