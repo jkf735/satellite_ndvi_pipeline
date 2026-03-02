@@ -4,7 +4,7 @@ import argparse
 import rasterio
 import numpy as np
 
-from resources.config import PROCESSED_DATA_DIR, INTERIM_DATA_DIR
+from resources.config import INTERIM_DATA_DIR
 
 logger = logging.getLogger("compute_ndvi")
 
@@ -77,7 +77,7 @@ def compute_ndvi_from_tif(red_path: str, nir_path: str, output_path: str) -> boo
     bool : If NDVI was computed or not
     """
     if os.path.exists(output_path):
-        logger.warning(f'Required mosaic tiles already exist at {output_path}. If you want to compute NDVI again, delete the current tif and run again.')
+        logger.warning(f'NDVI file already exist at {output_path}. If you want to compute NDVI again, delete the current tif and run again.')
         return False
 
     if not os.path.exists(red_path):
@@ -144,7 +144,7 @@ def compute_ndvi_from_tif(red_path: str, nir_path: str, output_path: str) -> boo
     with rasterio.open(output_path, "w", **profile) as dst:
         dst.write(ndvi.astype(rasterio.float32), 1)
 
-    logger.info(f"NDVI .tif Successfully written to: {output_path}")
+    logger.info(f"NDVI raster Successfully written to: {output_path}")
     return True
 
 def ndvi_qa(ndvi) -> dict:
@@ -174,23 +174,24 @@ def ndvi_qa(ndvi) -> dict:
     ndvi_mean = float(np.nanmean(ndvi_valid))
     ndvi_std = float(np.nanstd(ndvi_valid))
     nodata_pct = 100 * (1 - valid_count / total_pixels)
-
-    logger.info(f"\n--- NDVI QA Summary ---\nMin NDVI:  {ndvi_min:.4f}\nMax NDVI:  {ndvi_max:.4f}\nMean NDVI: {ndvi_mean:.4f}\nStd NDVI:  {ndvi_std:.4f}\nNodata %:  {nodata_pct:.2f}%\n------------------------")
-    # logger.info(f"Min NDVI:  {ndvi_min:.4f}")
-    # logger.info(f"Max NDVI:  {ndvi_max:.4f}")
-    # logger.info(f"Mean NDVI: {ndvi_mean:.4f}")
-    # logger.info(f"Std NDVI:  {ndvi_std:.4f}")
-    # logger.info(f"Nodata %:  {nodata_pct:.2f}%")
-    # logger.info("------------------------\n")
-
-    # Sanity checks
+    logger.info(
+        f"\n--- NDVI QA Summary ---"
+        f"\nMin NDVI:  {ndvi_min:.4f}"
+        f"\nMax NDVI:  {ndvi_max:.4f}"
+        f"\nMean NDVI: {ndvi_mean:.4f}"
+        f"\nStd NDVI:  {ndvi_std:.4f}"
+        f"\nNodata %:  {nodata_pct:.2f}%"
+        f"\nValid pixels: {valid_count}"
+        f"\n------------------------"
+    )
+    # sanity checks
     if ndvi_min < -1.1 or ndvi_max > 1.1:
         logger.error("NDVI values outside expected range (-1 to 1)")
         raise ValueError("NDVI values outside expected range (-1 to 1)")
 
     if nodata_pct > 90:
-        logger.error("Too many nodata pixels — .tif may be invalid")
-        raise ValueError("Too many nodata pixels — .tif may be invalid")
+        logger.error("Too many nodata pixels — raster may be invalid")
+        raise ValueError("Too many nodata pixels — raster may be invalid")
 
     return {
         "min": ndvi_min,
@@ -205,7 +206,7 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
         handlers=[
-        logging.FileHandler("logs/compute_ndvi.log"),
+        logging.FileHandler("logs/tile_processing.log"),
         logging.StreamHandler()
     ]
     )
