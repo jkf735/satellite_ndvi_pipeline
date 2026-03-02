@@ -52,7 +52,22 @@ def find_ndvi(folder, year, month) -> str:
     return ndvi_file
 
 def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
+    """
+    Clip NDVI raster to park boundary and write GeoTIFF.
 
+    Parameters
+    ----------
+    park_name : str
+        name of park
+    ndvi_path : str
+        Path NDVI.tif
+    output_path : str
+        Path where clipped GeoTIFF will be written
+
+    Returns
+    ----------
+    bool : If clipping was completed or not
+    """
     if os.path.exists(output_path):
         logger.warning(f'Clipped NDVI file already exist at {output_path}. If you want to clip again, delete the current raster and run again.')
         return False
@@ -179,7 +194,10 @@ def clip_qa(clipped_array, mask_array) -> dict:
         "valid_pixels": int(valid_pixels)
     }
 
-if __name__ == "__main__":
+def main():
+    """
+    Main function call for clip_to_park.py
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -205,3 +223,6 @@ if __name__ == "__main__":
         logging.info(f'COMPLETED CLIPPING {args.park}, {args.year}, {args.month}')
     else:
         logging.info(f'CLIPPING SPKIPPED: file alread exists for {args.park}, {args.year}, {args.month} at {output_path}')
+
+if __name__ == "__main__":
+    main()

@@ -459,9 +459,12 @@ def ingest_tiles(park:str, year, month) -> None:
     else:   
         logger.info(f"Stitching tiles together for tiles: {combo}. Then generating raster")
     generate_tif(file_list, interim_path)
-    
-    
-if __name__ == "__main__":
+
+
+def main():
+    """
+    Main function call for tile_ingest.py
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -478,4 +481,7 @@ if __name__ == "__main__":
     logging.info(f'STARTING TILE INGEST FOR {args.park}, {args.year}, {args.month}')
     ingest_tiles(args.park, args.year, args.month)
     logging.info(f'COMPLETED TILE INGEST FOR {args.park}, {args.year}, {args.month}')
+
+if __name__ == "__main__":
+    main()
     
