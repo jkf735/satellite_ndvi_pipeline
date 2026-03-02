@@ -34,7 +34,11 @@ psql:
 clean_logs:
 	@echo "Removing logs older than $(LOG_RETENTION_DAYS) days..."
 	@find $(LOG_DIR) -type f -name "*.log" -mtime +$(LOG_RETENTION_DAYS) -delete
+# SETUP
 init:
+	@if [ ! -f .env ]; then \
+		cp .env.example .env && echo "Created .env from template. Please edit it."; \
+	fi
 	python3 scripts/init.py
 # TABLES
 INGEST_FILE ?= data/raw/nps_boundary.geojson

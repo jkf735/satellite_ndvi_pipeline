@@ -16,7 +16,7 @@ REQUIRED_FOLDERS = [
     "data/raw",
     "data/interim",
     "data/processed",
-    "logs"
+    "logs",
     "scripts/resources"
 ]
 
