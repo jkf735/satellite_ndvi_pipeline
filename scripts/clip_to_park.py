@@ -216,7 +216,7 @@ def main():
     logging.info(f'CLIPING NDVI FILE TO PARK BOUNDARY: {args.park}, {args.year}, {args.month}')
     ndvi_file = find_ndvi(input_folder, args.year, args.month)
     ndvi_path = input_folder / ndvi_file
-    ouput_file = args.park + '_' + ndvi_file
+    ouput_file = args.park.lower() + '_' + ndvi_file
     output_path = PROCESSED_DATA_DIR / ouput_file
     complete = clip_ndvi_to_park(args.park, ndvi_path, output_path)
     if complete:
