@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, text
 from shapely.ops import unary_union
 from rasterio.merge import merge
 
-from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_BANDS_DIR, INTERIM_DATA_DIR, DB_URI
+from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_DATA_DIR, INTERIM_DATA_DIR, DB_URI
 
 logger = logging.getLogger("tile_ingets")
 os.environ["GDAL_PAM_ENABLED"] = "NO"
@@ -231,7 +231,7 @@ def check_if_needed_files_exist(required_tiles:list, park:str, year, month) -> l
     list
         list of the tile combination found in the parks directory (or empty list if none exist)
     """
-    folder_path = os.path.join(RAW_BANDS_DIR, park.lower())
+    folder_path = os.path.join(RAW_DATA_DIR, park.lower())
     if not os.path.isdir(folder_path):
         return []
     files = sorted(os.listdir(folder_path))
@@ -407,7 +407,7 @@ def ingest_tiles(park:str, year, month) -> None:
         combo, day = aws_interface.find_best_tile(required_tiles,year,month,max_cloud=10, min_coverage=80)
         if not combo or not day:
             return
-        output_path = os.path.join(RAW_BANDS_DIR, park.lower())
+        output_path = os.path.join(RAW_DATA_DIR, park.lower())
         # download each tile
         for tile in combo:
             tile_data = {
@@ -445,7 +445,7 @@ def ingest_tiles(park:str, year, month) -> None:
         logger.info(f'Required mosaic tiles already exist for {park} on {year}-{month}. If you want to create a new mosaic, delete the current one and run again.')
         return
     # get lists of paths to files
-    tile_path = RAW_BANDS_DIR / park.lower()
+    tile_path = RAW_DATA_DIR / park.lower()
     files = sorted(os.listdir(tile_path))
     file_list = []
     for i in files:
