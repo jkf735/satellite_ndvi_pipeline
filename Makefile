@@ -103,3 +103,7 @@ zonal_stats: clean_logs
 		echo "Running zonal stats on $(FILE)..."; \
 		python3 scripts/compute_zonal_stats.py --file $(FILE); \
 	fi
+warehouse: clean_logs
+	python3 scripts/build_warehouse.py
+
+

@@ -6,7 +6,6 @@ from db import get_db_connection
 # -------------------------
 # Logging
 # -------------------------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("init")
 
 # -------------------------
