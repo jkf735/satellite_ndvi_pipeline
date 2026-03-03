@@ -9,9 +9,19 @@ from resources.config import WAREHOUSE_DB, MODELS_DIR
 logger = logging.getLogger("build_warehouse")
 
 
-def extract_table(query):
+def extract_table(query: str) -> pd.DataFrame:
     """
     Runs a query against Postgres and returns a pandas DataFrame.
+
+    Parameters
+    ----------
+    query: str
+        query to be run
+    
+    Returns
+    ----------
+    dataframe:
+        result dataframe
     """
     conn = get_db_connection()
     try:
@@ -21,26 +31,61 @@ def extract_table(query):
     return df
 
 
-def load_to_duckdb(con, table_name, df):
+def load_to_duckdb(con, table_name: str, df: pd.DataFrame) -> None:
+    """
+    Loads data from a dataframe into a table in duckdb warehouse
+
+    Parameters
+    ----------
+    con: 
+        duckdb warehouse connection
+    table_name: str
+        name of table in warehouse
+    df: dataframe
+        data to be loadeded into table
+    """
     logger.info(f"Loading table into DuckDB: {table_name}")
     con.register("temp_df", df)
     con.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM temp_df")
     con.unregister("temp_df")
 
 
-def run_sql_models(con):
+def run_sql_models(con) -> None:
+    """
+    Execute all dims fact and marts
+
+    Parameters
+    ----------
+    con: 
+        duckdb warehouse connection
+    """
     logger.info("Running warehouse models...")
 
-    for root, _, files in os.walk(MODELS_DIR):
-        for file in sorted(files):
+    model_layers = [
+        "dimensions",
+        "facts",
+        "marts"
+    ]
+
+    for layer in model_layers:
+        layer_path = os.path.join(MODELS_DIR, layer)
+        for file in sorted(os.listdir(layer_path)):
             if file.endswith(".sql"):
-                path = os.path.join(root, file)
+                path = os.path.join(layer_path, file)
                 logger.info(f"Executing model: {path}")
                 with open(path, "r") as f:
                     sql = f.read()
                 con.execute(sql)
 
-def run_tests(con):
+def run_tests(con: duckdb.DuckDBPyConnection) -> None:
+    """
+    Execute warehouse tests (all results expected to be 0)
+
+    Parameters
+    ----------
+    con: DuckDBPyConnection
+        duckdb warehouse connection
+    """
     logger.info("Running warehouse tests...")
     test_dir = "warehouse/tests"
     for file in sorted(os.listdir(test_dir)):
@@ -111,6 +156,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    #TODO comment this code
-    #TODO marts
-    #TODO master script that runs everything for a park, year, month
