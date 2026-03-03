@@ -14,18 +14,20 @@ from resources.config import DB_URI, PROCESSED_DATA_DIR
 logger = logging.getLogger("compute_zonal_stats")
 
 # COMPUTE LAYER
-def compute_zonal_stats(tif_path: str) -> dict:
+def compute_zonal_stats(conn: psycopg2.extensions.connection, tif_path: str) -> dict:
     """
     Computes stats for given clipped raster
 
     Parameters
     ----------
+    conn : psycopg2.extensions.connection
+        connection information
     tif_path : str
         path to clipped raster
 
     Returns
     ----------
-    bool: If raster data already in table
+    dict: Full stats {park_name, park_code, date, year, month, mean_ndvi, std_ndvi, min_ndvi, max_ndvi, valid_pixels, source_raster}
     """
     filename = os.path.basename(tif_path)
     name = filename.replace("_NDVI.tif", "")
@@ -47,9 +49,26 @@ def compute_zonal_stats(tif_path: str) -> dict:
     if valid_values.size == 0:
         logging.error(f"No valid pixels in {filename}")
         raise ValueError(f"No valid pixels in {filename}")
-
+    # pull park full_name and code
+    code = None
+    full_name = None
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            SELECT park_code, park_name
+            FROM parks_validated
+            WHERE park_name ILIKE '{park_name.capitalize()}%'
+            LIMIT 1
+        """)
+        code, full_name = cur.fetchone()
+    if not code:
+        logging.error(f"Could not find park_code for {park_name}")
+        raise ValueError(f"Could not find park_code for {park_name}")
+    if not code:
+        logging.warning(f"Could not find full park_name for {park_name}")
+        full_name = park_name
     return {
-        "park_name": park_name,
+        "park_name": full_name,
+        "park_code": code,
         "date": obs_date,
         "year": year,
         "month": month,
@@ -102,6 +121,7 @@ def insert_zonal_stats(conn: psycopg2.extensions.connection, stats: dict) -> Non
         cur.execute("""
             INSERT INTO park_ndvi_stats (
                 park_name,
+                park_code,
                 date,
                 year,
                 month,
@@ -112,9 +132,10 @@ def insert_zonal_stats(conn: psycopg2.extensions.connection, stats: dict) -> Non
                 valid_pixels,
                 source_raster
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             stats["park_name"],
+            stats["park_code"],
             stats["date"],
             stats["year"],
             stats["month"],
@@ -151,7 +172,7 @@ def process_file_if_needed(conn: psycopg2.extensions.connection, tif_path: str) 
         return False
 
     logging.info(f"Processing {filename}...")
-    stats = compute_zonal_stats(tif_path)
+    stats = compute_zonal_stats(conn, tif_path)
     insert_zonal_stats(conn, stats)
     logging.info(f"Inserted {filename}")
     return True

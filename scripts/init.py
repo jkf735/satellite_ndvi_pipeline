@@ -17,7 +17,9 @@ REQUIRED_FOLDERS = [
     "data/interim",
     "data/processed",
     "logs",
-    "scripts/resources"
+    "scripts/resources",
+    "warehouse",
+    "warehouse/models"
 ]
 
 def ensure_directories():
@@ -58,6 +60,17 @@ def run_all_sql(conn):
 # Main
 # -------------------------
 def main():
+    """
+    Main function call for init.py
+    """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        handlers=[
+        logging.FileHandler("logs/setup.log"),
+        logging.StreamHandler()
+    ]
+    )
     ensure_directories()
     conn = get_db_connection()
     try:
