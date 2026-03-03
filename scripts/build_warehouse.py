@@ -111,3 +111,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #TODO comment this code
+    #TODO marts
+    #TODO master script that runs everything for a park, year, month

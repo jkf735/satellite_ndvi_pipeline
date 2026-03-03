@@ -199,7 +199,7 @@ def get_files_to_process(single_file: str | None) -> list:
     return glob.glob(os.path.join(PROCESSED_DATA_DIR, "*.tif"))
 
 # MAIN
-def main():
+def main(file=None,arguments=False):
     """
     Main function call for compute_zonal_stats.py
     """
@@ -211,16 +211,18 @@ def main():
         logging.StreamHandler()
     ]
     )
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--file", type=str, required=False, help="Path to a single .tif file to process")
-    args = parser.parse_args()
-    if args.file:
-        logging.info(f'COMPUTING ZONAL SATATS for {args.file}')
+    if not arguments:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--file", type=str, required=False, help="Path to a single .tif file to process")
+        args = parser.parse_args()
+        file = args.file
+    
+    if file:
+        logging.info(f'COMPUTING ZONAL SATATS for {file}')
     else:
         logging.info(f'COMPUTING ZONAL SATATS for all files in {PROCESSED_DATA_DIR}')
     
-    files = get_files_to_process(args.file)
+    files = get_files_to_process(file)
 
     if not files:
         logging.warning("No files found to process")

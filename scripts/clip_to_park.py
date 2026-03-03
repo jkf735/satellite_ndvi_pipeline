@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, text
 
 from resources.config import DB_URI, INTERIM_DATA_DIR, PROCESSED_DATA_DIR
 
-logger = logging.getLogger("compute_ndvi")
+logger = logging.getLogger("clip_to_park")
 
 def find_ndvi(folder, year, month) -> str:
     """
@@ -194,7 +194,7 @@ def clip_qa(clipped_array, mask_array) -> dict:
         "valid_pixels": int(valid_pixels)
     }
 
-def main():
+def main(park=None, year=None, month=None):
     """
     Main function call for clip_to_park.py
     """
@@ -206,23 +206,25 @@ def main():
         logging.StreamHandler()
     ]
     )
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--park", type=str, required=True)
-    parser.add_argument("--year", type=int, required=True)
-    parser.add_argument("--month", type=int, required=True)
-    args = parser.parse_args()
-    input_folder = INTERIM_DATA_DIR / args.park.lower()
+    if park is None:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--park", type=str, required=True)
+        parser.add_argument("--year", type=int, required=True)
+        parser.add_argument("--month", type=int, required=True)
+        args = parser.parse_args()
+        park, year, month = args.park, args.year, args.month
+    input_folder = INTERIM_DATA_DIR / park.lower()
     
-    logging.info(f'CLIPING NDVI FILE TO PARK BOUNDARY: {args.park}, {args.year}, {args.month}')
-    ndvi_file = find_ndvi(input_folder, args.year, args.month)
+    logging.info(f'CLIPING NDVI FILE TO PARK BOUNDARY: {park}, {year}, {month}')
+    ndvi_file = find_ndvi(input_folder, year, month)
     ndvi_path = input_folder / ndvi_file
-    ouput_file = args.park.lower() + '_' + ndvi_file
+    ouput_file = park.lower() + '_' + ndvi_file
     output_path = PROCESSED_DATA_DIR / ouput_file
-    complete = clip_ndvi_to_park(args.park, ndvi_path, output_path)
+    complete = clip_ndvi_to_park(park, ndvi_path, output_path)
     if complete:
-        logging.info(f'COMPLETED CLIPPING {args.park}, {args.year}, {args.month}')
+        logging.info(f'COMPLETED CLIPPING {park}, {year}, {month}')
     else:
-        logging.info(f'CLIPPING SPKIPPED: file alread exists for {args.park}, {args.year}, {args.month} at {output_path}')
+        logging.info(f'CLIPPING SPKIPPED: file alread exists for {park}, {year}, {month} at {output_path}')
 
 if __name__ == "__main__":
     main()

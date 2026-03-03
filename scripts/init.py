@@ -2,6 +2,7 @@ import os
 import logging
 from glob import glob
 from db import get_db_connection
+from resources.config import RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR, LOGS_DIR, RESOURCE_DIR, WAREHOUSE_DIR, MODELS_DIR
 
 # -------------------------
 # Logging
@@ -12,13 +13,13 @@ logger = logging.getLogger("init")
 # Directories
 # -------------------------
 REQUIRED_FOLDERS = [
-    "data/raw",
-    "data/interim",
-    "data/processed",
-    "logs",
-    "scripts/resources",
-    "warehouse",
-    "warehouse/models"
+    RAW_DATA_DIR,
+    INTERIM_DATA_DIR,
+    PROCESSED_DATA_DIR,
+    LOGS_DIR,
+    RESOURCE_DIR,
+    WAREHOUSE_DIR,
+    MODELS_DIR
 ]
 
 def ensure_directories():

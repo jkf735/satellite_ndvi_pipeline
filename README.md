@@ -64,12 +64,36 @@ satellite-ndvi-pipeline/
 ├── requirements.txt        # Python dependencies
 └── README.md
 ```
+Project is setup by default to exist in a containerized WSL environment with data stored locally. This can be configured in config.py (see below)
 
 ---
 
 ## Getting Started
 
+## Prerequisites
+
+### WSL2 Configuration
+This project stores raster data outside the WSL virtual disk to avoid bloating the `.vhdx` file.
+Ensure your `/etc/wsl.conf` contains the following:
+```ini
+[automount]
+enabled = true
+root = /mnt/
+options = "metadata"
+```
+
+After editing, restart WSL:
+```powershell
+wsl --shutdown
+```
+
+### Data Directory
+By default the project expects data to live at `/mnt/d/Code/Projects/satellite-ndvi-pipeline/data/`.
+Update `LOCAL_ROOT` in `satellite_ndvi_pipeline/config.py` to match your local path before running.
+If you are not using WSL you can replace all instances of LOCAL_ROOT with PROJECT_ROOT.
+
 ### Standard Setup
+Update LOCAL_ROOT and PROJECT_ROOT to necessary paths depending on what type of environment you use (fully local, wsl, docker container, etc.)
 
 All Python dependencies are listed in `requirements.txt`. Install them with:
 

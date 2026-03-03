@@ -71,6 +71,13 @@ qa_table: clean_logs
 	@echo "===== QA END $$(date) =====" | tee -a $(QA_LOG_FILE)
 
 # SCRIPTS
+full: clean_logs
+	@if [ -z "$(PARKS)" ] || [ -z "$(YEARS)" ] || [ -z "$(MONTHS)" ]; then \
+		echo "ERROR: Must provide PARKS, YEARS, and MONTHS and CLEANUP"; \
+		echo 'Usage: make full PARKS="yosemitie zion" YEARS="2024 2025" MONTHS="2 3 4 5 6 7" CLEANUP=True'; \
+	else \
+		python3 scripts/full_ingest.py --parks $(PARKS) --years $(YEARS) --months $(MONTHS) $(if $(filter true True 1,$(CLEANUP)),--cleanup,); \
+	fi
 ingest_tiles: clean_logs
 	@if [ -z "$(PARK)" ] || [ -z "$(YEAR)" ] || [ -z "$(MONTH)" ]; then \
 		echo "ERROR: Must provide PARK, YEAR, and MONTH"; \
@@ -82,7 +89,7 @@ ingest_tiles: clean_logs
 ndvi: clean_logs
 	@if [ -z "$(PARK)" ] || [ -z "$(YEAR)" ] || [ -z "$(MONTH)" ]; then \
 		echo "ERROR: Must provide PARK, YEAR, and MONTH"; \
-		echo "Usage: make ingest_tiles PARK=Yosemite YEAR=2025 MONTH=11"; \
+		echo "Usage: make ndvi PARK=Yosemite YEAR=2025 MONTH=11"; \
 	else \
 		python3 scripts/compute_ndvi.py --park $(PARK) --year $(YEAR) --month $(MONTH); \
 	fi
@@ -90,7 +97,7 @@ ndvi: clean_logs
 clip: clean_logs
 	@if [ -z "$(PARK)" ] || [ -z "$(YEAR)" ] || [ -z "$(MONTH)" ]; then \
 		echo "ERROR: Must provide PARK, YEAR, and MONTH"; \
-		echo "Usage: make ingest_tiles PARK=Yosemite YEAR=2025 MONTH=11"; \
+		echo "Usage: make clip PARK=Yosemite YEAR=2025 MONTH=11"; \
 	else \
 		python3 scripts/clip_to_park.py --park $(PARK) --year $(YEAR) --month $(MONTH); \
 	fi
@@ -103,6 +110,7 @@ zonal_stats: clean_logs
 		echo "Running zonal stats on $(FILE)..."; \
 		python3 scripts/compute_zonal_stats.py --file $(FILE); \
 	fi
+# WAREHOUSE
 warehouse: clean_logs
 	python3 scripts/build_warehouse.py
 
