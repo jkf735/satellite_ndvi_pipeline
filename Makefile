@@ -6,6 +6,7 @@ DB_PASS=geo_pass
 
 THIS_FILE := $(lastword $(MAKEFILE_LIST))
 LOG_RETENTION_DAYS = 30
+LOG_SIZE_LIMIT = +100M
 LOG_DIR=logs
 INGEST_LOG_FILE=$(LOG_DIR)/ingest.log
 QA_LOG_FILE=$(LOG_DIR)/qa_$(shell date +%Y%m%d_%H%M%S).log
@@ -32,8 +33,9 @@ psql:
 
 # LOGGING
 clean_logs:
-	@echo "Removing logs older than $(LOG_RETENTION_DAYS) days..."
+	@echo "Cleaning logs..."
 	@find $(LOG_DIR) -type f -name "*.log" -mtime +$(LOG_RETENTION_DAYS) -delete
+	@find $(LOGFILE) -type f -size $(LOG_SIZE_LIMIT) -delete
 # SETUP
 init:
 	@if [ ! -f .env ]; then \

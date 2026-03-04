@@ -1,3 +1,17 @@
+"""
+compute_ndvi.py
+Calculates NDVI from B04 and B08 .tif files
+
+Inputs: 
+   - Park_name, year, month
+   - coresponding B04.tif and B08.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+Outputs: 
+   - NDVI.tif file created in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
+
+Usage:
+    python3 compute_ndvi.py --park yosemite --year 2025 --month 11
+    make ndvi PARK=Yosemite YEAR=2025 MONTH=11
+"""
 import os
 import logging
 import argparse

@@ -1,3 +1,16 @@
+"""
+tile_ingest.py
+Downloads all S3 tiles (B04 and B08 bands) needed to cover a parks entire area into data/raw/{park_name}. Then mosaics and converts to .tif in data/interim/{park_name}
+
+Inputs: Park_name, year, month
+Outputs: 
+    - All raw s3 tile .jp2 files needed to cover entire park area in data/raw/{park_name} (name example: 19TEJ_2025_11_2_B08.tif)
+    - B04 and B08 .tif files (mosaiced if needed) in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+
+Usage:
+    python3 tile_ingest.py --park yosemite --year 2025 --month 11
+    make ingest_tiles PARK=Yosemite YEAR=2025 MONTH=11
+"""
 import os
 import json
 import logging

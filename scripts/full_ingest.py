@@ -1,3 +1,17 @@
+"""
+full_ingest.py
+Runs tile_ingest->compute_ndvi->clip_to_park->compute_zonal_stats for any number of input park,year,months.
+WARNING: if doing a large input ensure you have the file space or set Cleanup to TRUE.
+
+Inputs: Park_name, year, month, cleanup_flag
+Outputs: 
+   - All clipped ndvi geotiffs in data/processed (raw/interim data cleaned if cleaup=true)
+   - All data in park_ndvi_stats
+
+Usage:
+    python3 full_ingest.py --parks "yosemite zion" --years "2024 2025" --months "1 2 3 4 5 6 7 8 9 10 11 12" --cleanup true
+    make full PARKS="yosemitie zion" YEARS="2024 2025" MONTHS="2 3 4 5 6 7" CLEANUP=True
+"""
 import os
 import shutil
 import logging

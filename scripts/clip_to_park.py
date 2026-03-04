@@ -1,3 +1,17 @@
+"""
+clip_to_park.py
+Clips interim NDVI.tif file to just park outline
+
+Inputs: 
+   - Park_name, year, month
+   - coresponding NDVI.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
+Outputs: 
+   - clipped NDVI.tif file created in data/iprocessed (name example: yosemite_2025_11_2_NDVI.tif)
+
+Usage:
+    python3 clip_to_park.py --park yosemite --year 2025 --month 11
+    make clip PARK=Yosemite YEAR=2025 MONTH=11
+"""
 import os
 import logging
 import argparse

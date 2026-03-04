@@ -1,3 +1,15 @@
+"""
+init.py
+Initialize file structures and inital sql tables.
+
+Inputs: None
+Outputs: 
+   - empty parks_raw and park_ndvi_stats table created
+
+Usage:
+    python3 init.py --park yosemite --year 2025 --month 11
+    make init
+"""
 import os
 import logging
 from glob import glob

@@ -1,8 +1,20 @@
+"""
+db.py
+Helper function to ceate a connection to our POSTGRES DB
+
+Inputs:
+   - .env file exists with DB info
+Outputs: 
+   - psycopg2.connection object for use in code
+
+Usage:
+    only called internally
+"""
 import os
 import psycopg2
 from dotenv import load_dotenv
 
-def get_db_connection():
+def get_db_connection() -> psycopg2.extensions.connection:
     """
     Returns a new PostgreSQL connection.
     Raises error if required env vars missing.
