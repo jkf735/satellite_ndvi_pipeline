@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS park_ndvi_stats (
                 park_name TEXT,
+                park_code TEXT,
                 date DATE,
                 year INT,
                 month INT,

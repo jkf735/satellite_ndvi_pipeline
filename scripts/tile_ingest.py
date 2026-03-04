@@ -1,3 +1,16 @@
+"""
+tile_ingest.py
+Downloads all S3 tiles (B04 and B08 bands) needed to cover a parks entire area into data/raw/{park_name}. Then mosaics and converts to .tif in data/interim/{park_name}
+
+Inputs: Park_name, year, month
+Outputs: 
+    - All raw s3 tile .jp2 files needed to cover entire park area in data/raw/{park_name} (name example: 19TEJ_2025_11_2_B08.tif)
+    - B04 and B08 .tif files (mosaiced if needed) in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+
+Usage:
+    python3 tile_ingest.py --park yosemite --year 2025 --month 11
+    make ingest_tiles PARK=Yosemite YEAR=2025 MONTH=11
+"""
 import os
 import json
 import logging
@@ -335,12 +348,21 @@ def generate_tif(input_files:list, output_folder) -> None:
             output_path = output_folder / output_file_name
             src = sources[0]
             output_metadata = src.meta.copy()
+            output_metadata.update({
+                "driver": "GTiff",
+                "height": src.height,
+                "width": src.width,
+                "count": src.count,
+                "dtype": src.dtypes[0],
+                "crs": src.crs,
+                "transform": src.transform,
+            })
             try:
                 with rasterio.open(output_path, "w", **output_metadata) as dest:
                     dest.write(src.read())
-                logger.info(f"Mosaic created at {output_path}")
+                logger.info(f"NDVI created at {output_path}")
             except:
-                logger.warning(f"ABORTING MOSAIC IN 'generate_tif': Failed to write to {output_path}")
+                logger.warning(f"ABORTING NDVI IN 'generate_tif': Failed to write to {output_path}")
         # if more than 1 then stitch tiles into mosaic before saving
         else:
             output_file_name = str(tile_list[0]).split('/')[-1].split('_',1)[1].replace('.jp2','_mosaic.tif')
@@ -461,7 +483,7 @@ def ingest_tiles(park:str, year, month) -> None:
     generate_tif(file_list, interim_path)
 
 
-def main():
+def main(park=None, year=None, month=None):
     """
     Main function call for tile_ingest.py
     """
@@ -473,14 +495,16 @@ def main():
         logging.StreamHandler()
     ]
     )
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--park", type=str, required=True)
-    parser.add_argument("--year", type=int, required=True)
-    parser.add_argument("--month", type=int, required=True)
-    args = parser.parse_args()
-    logging.info(f'STARTING TILE INGEST FOR {args.park}, {args.year}, {args.month}')
-    ingest_tiles(args.park, args.year, args.month)
-    logging.info(f'COMPLETED TILE INGEST FOR {args.park}, {args.year}, {args.month}')
+    if park is None:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--park", type=str, required=True)
+        parser.add_argument("--year", type=int, required=True)
+        parser.add_argument("--month", type=int, required=True)
+        args = parser.parse_args()
+        park, year, month = args.park, args.year, args.month
+    logging.info(f'STARTING TILE INGEST FOR {park}, {year}, {month}')
+    ingest_tiles(park, year, month)
+    logging.info(f'COMPLETED TILE INGEST FOR {park}, {year}, {month}')
 
 if __name__ == "__main__":
     main()
