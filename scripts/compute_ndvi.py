@@ -1,3 +1,17 @@
+"""
+compute_ndvi.py
+Calculates NDVI from B04 and B08 .tif files
+
+Inputs: 
+   - Park_name, year, month
+   - coresponding B04.tif and B08.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+Outputs: 
+   - NDVI.tif file created in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
+
+Usage:
+    python3 compute_ndvi.py --park yosemite --year 2025 --month 11
+    make ndvi PARK=Yosemite YEAR=2025 MONTH=11
+"""
 import os
 import logging
 import argparse
@@ -38,7 +52,7 @@ def find_files(folder, year, month) -> tuple:
         split = file.split('_')
         file_year = split[0]
         file_month = split[1]
-        file_band = split[3]
+        file_band = split[3].replace(".tif","")
         if file_year ==  str(year) and file_month == str(month):
             if file_band == "B04": red_file = file
             elif file_band == "B08": nir_file = file
@@ -201,7 +215,7 @@ def ndvi_qa(ndvi) -> dict:
         "nodata_pct": nodata_pct
     }
 
-def main():
+def main(park=None, year=None, month=None):
     """
     Main function call for compute_ndvi.py
     """
@@ -213,20 +227,22 @@ def main():
         logging.StreamHandler()
     ]
     )
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--park", type=str, required=True)
-    parser.add_argument("--year", type=int, required=True)
-    parser.add_argument("--month", type=int, required=True)
-    args = parser.parse_args()
-    input_folder = INTERIM_DATA_DIR / args.park.lower()
+    if park is None:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--park", type=str, required=True)
+        parser.add_argument("--year", type=int, required=True)
+        parser.add_argument("--month", type=int, required=True)
+        args = parser.parse_args()
+        park, year, month = args.park, args.year, args.month
+    input_folder = INTERIM_DATA_DIR / park.lower()
     
-    logging.info(f'COMPUTING NDVI FOR {args.park}, {args.year}, {args.month}')
-    red_path, nir_path, output_path = find_files(input_folder, args.year, args.month)
+    logging.info(f'COMPUTING NDVI FOR {park}, {year}, {month}')
+    red_path, nir_path, output_path = find_files(input_folder, year, month)
     complete = compute_ndvi_from_tif(red_path, nir_path, output_path)
     if complete:
-        logging.info(f'COMPLETED NDVI COMPUTATION {args.park}, {args.year}, {args.month}')
+        logging.info(f'COMPLETED NDVI COMPUTATION {park}, {year}, {month}')
     else:
-        logging.info(f'NDVI GENERATION SPKIPPED: file alread exists for {args.park}, {args.year}, {args.month} at {output_path}')
+        logging.info(f'NDVI GENERATION SPKIPPED: file alread exists for {park}, {year}, {month} at {output_path}')
 
 if __name__ == "__main__":
     main()

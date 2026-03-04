@@ -1,23 +1,37 @@
+"""
+init.py
+Initialize file structures and inital sql tables.
+
+Inputs: None
+Outputs: 
+   - empty parks_raw and park_ndvi_stats table created
+
+Usage:
+    python3 init.py --park yosemite --year 2025 --month 11
+    make init
+"""
 import os
 import logging
 from glob import glob
 from db import get_db_connection
+from resources.config import RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR, LOGS_DIR, RESOURCE_DIR, WAREHOUSE_DIR, MODELS_DIR
 
 # -------------------------
 # Logging
 # -------------------------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("init")
 
 # -------------------------
 # Directories
 # -------------------------
 REQUIRED_FOLDERS = [
-    "data/raw",
-    "data/interim",
-    "data/processed",
-    "logs",
-    "scripts/resources"
+    RAW_DATA_DIR,
+    INTERIM_DATA_DIR,
+    PROCESSED_DATA_DIR,
+    LOGS_DIR,
+    RESOURCE_DIR,
+    WAREHOUSE_DIR,
+    MODELS_DIR
 ]
 
 def ensure_directories():
@@ -58,6 +72,17 @@ def run_all_sql(conn):
 # Main
 # -------------------------
 def main():
+    """
+    Main function call for init.py
+    """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        handlers=[
+        logging.FileHandler("logs/setup.log"),
+        logging.StreamHandler()
+    ]
+    )
     ensure_directories()
     conn = get_db_connection()
     try:
