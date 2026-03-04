@@ -1,3 +1,17 @@
+"""
+build_warehouse.py
+Creates or updates and runs tests on a duckdb warehouse.db with dims, facts, and marts based off of data in parks_validated and park_ndvi_stats
+
+Inputs: 
+   - No arguments
+   - parks_validated and park_ndvi_stats exist and populated
+Outputs: 
+   - warehouse/warehouse.db
+
+Usage:
+    python3 scripts/compute_zonal_stats.py --file <file_name> (name example: yosemite_2025_11_2_NDVI.tif)
+    make zonal_stats
+"""
 import os
 import logging
 import duckdb
@@ -37,7 +51,7 @@ def load_to_duckdb(con, table_name: str, df: pd.DataFrame) -> None:
 
     Parameters
     ----------
-    con: 
+    con: DuckDBPyConnection
         duckdb warehouse connection
     table_name: str
         name of table in warehouse
@@ -56,7 +70,7 @@ def run_sql_models(con) -> None:
 
     Parameters
     ----------
-    con: 
+    con: DuckDBPyConnection
         duckdb warehouse connection
     """
     logger.info("Running warehouse models...")
