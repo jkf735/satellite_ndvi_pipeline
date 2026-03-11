@@ -9,8 +9,8 @@ Outputs:
    - warehouse/warehouse.db
 
 Usage:
-    python3 scripts/compute_zonal_stats.py --file <file_name> (name example: yosemite_2025_11_2_NDVI.tif)
-    make zonal_stats
+    python3 scripts/build_warehouse.py
+    make warehouse
 """
 import os
 import logging

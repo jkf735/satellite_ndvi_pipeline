@@ -2,9 +2,9 @@
 -- RESET VALIDATION TABLES
 -- =========================================
 
-DROP TABLE IF EXISTS parks_validated;
-DROP TABLE IF EXISTS parks_qa_failures;
-DROP TABLE IF EXISTS parks_repaired;
+DROP TABLE IF EXISTS parks_validated CASCADE;
+DROP TABLE IF EXISTS parks_qa_failures CASCADE;
+DROP TABLE IF EXISTS parks_repaired CASCADE;
 
 CREATE TABLE parks_repaired (
     object_id INTEGER,
