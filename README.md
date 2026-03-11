@@ -83,9 +83,9 @@ Project is setup by default to exist in a containerized WSL environment with dat
 
 ## Getting Started
 
-## Prerequisites
+### Prerequisites
 
-### WSL2 Configuration
+#### WSL2 Configuration
 This project stores raster data outside the WSL virtual disk to avoid bloating the `.vhdx` file.
 Ensure your `/etc/wsl.conf` contains the following:
 ```ini
@@ -100,13 +100,16 @@ After editing, restart WSL:
 wsl --shutdown
 ```
 
-### Data Directory
+#### Data Directory
 By default the project expects data to live at `/mnt/d/Code/Projects/satellite-ndvi-pipeline/data/`.
-Update `LOCAL_ROOT` in `satellite_ndvi_pipeline/config.py` to match your local path before running.
+Update `LOCAL_ROOT` in `satellite_ndvi_pipeline/scripts/resources/config.py` to match your local path before running.
 If you are not using WSL you can replace all instances of LOCAL_ROOT with PROJECT_ROOT.
 
+#### POSTGRES Database
+By default a postgres database will be created in a docker volume when 'make up' is called. The environment details can be found in `satellite_ndvi_pipeline/docker/docker-compose.yml`. You can edit the details of this database here. Make sure any changes are also reflected in your .env file.
+
 ### Standard Setup
-Update LOCAL_ROOT and PROJECT_ROOT to necessary paths depending on what type of environment you use (fully local, wsl, docker container, etc.)
+Update LOCAL_ROOT and PROJECT_ROOT to necessary paths in `scripts/resources/config.py`. If you are using docker, update any database information in `docker/docker-compose.yml`
 
 All Python dependencies are listed in `requirements.txt`. Install them with:
 
@@ -114,14 +117,22 @@ All Python dependencies are listed in `requirements.txt`. Install them with:
 pip install -r requirements.txt
 ```
 
-Initialize the environment:
+Initialize the docker, postgres environment:
 
 ```bash
 make up
+```
+If you are using your own containerized environment, you can skip 'make up' but make sure your database information gets put in the .env file.
+
+Initialize the initial tables in paostgres database:
+
+```bash
 make init
 ```
-If you prefer not to use Docker, you can skip 'make up'.
 
+You can now inspect your database for the following tables: 'parks_ndvi_stats', 'parks_raw', 'parks_repaired', 'parks_validated', 'parks_qa_failures'.
+
+If you used docker you can check your database at the created adminer service: http://localhost:8080/
 ---
 
 ## Usage
@@ -135,13 +146,15 @@ Run the pipeline steps in order using the provided Makefile targets:
 4. make warehouse
 ```
 
-Additional scripts can be invoked directly from the `scripts/` directory or via custom Makefile targets for more granular control over individual pipeline steps. Particularly step 3 (make full) can be broken up into make tile_ingest, make ndvi, make clip, make zonal_stats
+Additional scripts can be invoked directly from the `scripts/` directory or via custom Makefile targets for more granular control over individual pipeline steps. Particularly step 3 (make full) can be broken up into 'make tile_ingest', 'make ndvi', 'make clip', and 'make zonal_stats'.
 
 ---
 
 ## Configuration
 
-Pipeline paths, database connection strings, and constants are managed in `satellite_ndvi_pipeline/scripts/config.py`. This file can be updated to match your local environment or AWS configuration.
+Pipeline paths, database connection strings, and constants are managed in `satellite_ndvi_pipeline/scripts/resources/config.py`. This file can be updated to match your local environment or AWS configuration.
+
+Your .env file contains information on your postgres database (this will be created for you from .env.example. Update it with your prefered config. If using docker any changes should also be reflected in docker-compose.yml)
 
 ## Warehouse Architecture
 
