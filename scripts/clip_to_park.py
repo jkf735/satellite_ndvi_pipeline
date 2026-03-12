@@ -6,7 +6,7 @@ Inputs:
    - Park_name, year, month
    - coresponding NDVI.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
 Outputs: 
-   - clipped NDVI.tif file created in data/iprocessed (name example: yosemite_2025_11_2_NDVI.tif)
+   - clipped NDVI.tif file created in data/processed (name example: yosemite_2025_11_2_NDVI.tif)
 
 Usage:
     python3 clip_to_park.py --park yosemite --year 2025 --month 11
@@ -16,10 +16,14 @@ import os
 import logging
 import argparse
 import rasterio
+from pathlib import Path
 import numpy as np
 import geopandas as gpd
 from rasterio.mask import mask
 from rasterio.features import geometry_mask
+from rasterio.enums import Resampling
+import rasterio.shutil as rio_shutil
+from rio_cogeo.cogeo import cog_validate
 from sqlalchemy import create_engine, text
 
 from resources.config import DB_URI, INTERIM_DATA_DIR, PROCESSED_DATA_DIR
@@ -67,7 +71,7 @@ def find_ndvi(folder, year, month) -> str:
 
 def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
     """
-    Clip NDVI raster to park boundary and write GeoTIFF.
+    Clip NDVI raster to park boundary and write as Cloud Optimized GeoTIFF (COG).
 
     Parameters
     ----------
@@ -76,7 +80,7 @@ def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
     ndvi_path : str
         Path NDVI.tif
     output_path : str
-        Path where clipped GeoTIFF will be written
+        Path where clipped COG will be written
 
     Returns
     ----------
@@ -87,11 +91,11 @@ def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
         return False
     
     # connect to PostGIS
-    logger.info("Connectiong to PostGIS database...")
+    logger.info("Connecting to PostGIS database...")
     engine = create_engine(DB_URI)
 
     # pull park boundary
-    logger.info(f"Querying 'parks_validated' table for park_name like '{park_name}%...")
+    logger.info(f"Querying 'parks_validated' table for park_name like '{park_name}%'...")
     query = f"""
         SELECT geom
         FROM parks_validated
@@ -102,14 +106,13 @@ def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
         logging.error(f"No {park_name} geometry found in database.")
         raise ValueError(f"No {park_name} geometry found in database.")
     
-    logger.info("Reading Inputs...")
+    logger.info("Reading inputs...")
     with rasterio.open(ndvi_path) as src:
         # reproject park to raster CRS
         raster_crs = src.crs
         if park_gdf.crs != raster_crs:
             park_gdf = park_gdf.to_crs(raster_crs)
 
-        # extract geometry as GeoJSON-like mapping
         geometries = park_gdf.geometry.values
 
         # clip
@@ -128,8 +131,8 @@ def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
             "transform": clipped_transform
         })
 
-        # run QA:
-        logger.info("Running Clipped NDVI QA...")
+        # run QA
+        logger.info("Running clipped NDVI QA...")
         mask_array = geometry_mask(
             park_gdf.geometry,
             transform=clipped_transform,
@@ -139,13 +142,96 @@ def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
         )
         clip_qa(clipped_array, mask_array)
 
-    # save
-    logger.info("Writting To Output...")
-    with rasterio.open(output_path, "w", **profile) as dest:
-        dest.write(clipped_array,1)
+    # write COG
+    logger.info("Writing COG to output...")
+    success = write_cog(clipped_array, profile, output_path)
 
-    logger.info(f"Clipped NDVI raster Successfully written to: {output_path}")
-    return True
+    if success:
+        logger.info(f"Clipped NDVI COG successfully written to: {output_path}")
+        return True
+    else:
+        logger.warning(f"Could NOT write clipped NDVI COG to: {output_path}")
+        return False
+
+
+def write_cog(array: np.ndarray, profile: dict, output_path: Path) -> bool:
+    """
+    Write a 2D numpy array to disk as a Cloud Optimized GeoTIFF.
+
+    Parameters
+    ----------
+    array : np.ndarray
+        2D array to write
+    profile : dict
+        Rasterio profile from source raster (will be updated for COG)
+    output_path : Path
+        Path where COG will be written
+
+    Returns
+    ----------
+    bool : If COG conversion was completed or not
+    """
+    retval = True
+    cog_profile = profile.copy()
+    """ Notes on COG profile:
+    - DEFLATE compression (better ratio than LZW for float32 NDVI data)
+    - 512x512 internal tiles (standard COG tile size)
+    - Overview levels for multi-scale rendering (used later for Titiler/map tile server)
+    - Predictor=2 horizontal differencing (improves DEFLATE ratio on continuous data)"""
+    cog_profile.update({
+        "driver": "GTiff",
+        "dtype": "float32",
+        "compress": "DEFLATE",
+        "predictor": 2,       
+        "tiled": True,
+        "blockxsize": 512,
+        "blockysize": 512,
+        "interleave": "band",
+        "count": 1
+    })
+    # cog_profile.pop("blockysize", None)
+
+    # COGs require a temp file first — overviews must be built before the final file is written
+    tmp_path = str(output_path).replace(".tif", "_tmp.tif")
+    try:
+        with rasterio.open(tmp_path, "w", **cog_profile) as tmp:
+            tmp.write(array, 1)
+
+            # build overviews — levels 2,4,8,16 cover zoom levels needed by Titiler
+            overview_levels = [2, 4, 8, 16]
+            tmp.build_overviews(overview_levels, Resampling.average)
+            tmp.update_tags(ns="rio_overview", resampling="average")
+
+        # copy to final COG with overviews embedded at file start
+        cog_creation_options = {
+            "compress": "DEFLATE",
+            "predictor": 2,
+            "tiled": True,
+            "blockxsize": 512,
+            "blockysize": 512,
+            "interleave": "band",
+        }
+        rio_shutil.copy(tmp_path, str(output_path), copy_src_overviews=True, driver="GTiff", **cog_creation_options)
+        logger.info(f"COG overviews built at levels: {overview_levels}")
+        retval = True
+    except:
+        logger.error(f"Unexpected error while converting to COG!")
+        retval = False
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+    if retval == False:
+        return retval
+    
+    # QA the COG
+    is_valid, errors, warnings = cog_validate(output_path)
+    if is_valid:
+        logger.info(f"COG verified")
+        return True
+    else:
+        logger.error(f"COG ERRORS: {errors}")
+        logger.warning(f"COG WARNINGS: {warnings}")
+        return False
 
 def clip_qa(clipped_array, mask_array) -> dict:
     """
@@ -238,7 +324,7 @@ def main(park=None, year=None, month=None):
     if complete:
         logging.info(f'COMPLETED CLIPPING {park}, {year}, {month}')
     else:
-        logging.info(f'CLIPPING SPKIPPED: file alread exists for {park}, {year}, {month} at {output_path}')
+        logging.info('CLIPPING SKIPPED/FAILED: (see above info)')
 
 if __name__ == "__main__":
     main()
