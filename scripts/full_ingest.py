@@ -80,8 +80,8 @@ def main(parks=None, years=None, months=None, cleanup=True):
                     ndvi_main(park, year, month)
                     step = 'clip'
                     clip_main(park, year, month)
-                except:
-                    fail_dict[f'{park}-{year}-{month}'] = step
+                except Exception as e:
+                    fail_dict[f'{park}-{year}-{month}'] = f"{step} - {e}"
                     continue
             if cleanup:
                 logging.info(f'STARTING CLEANUP for {park}')
