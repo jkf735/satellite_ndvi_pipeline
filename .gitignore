@@ -12,8 +12,10 @@ __pycache__/
 # Data folders (large / generated)
 # -----------------------------
 data/raw/
+data/interim/
 data/processed/
 data/qa/
+data/quickstart/
 *.tif               # large raster files
 *.gpkg              # local geopackage files
 *.shp               # shapefiles (if downloading raw)
@@ -36,3 +38,15 @@ docker/postgis/init/*.swp
 Thumbs.db
 *.swp
 *.swo
+
+# -----------------------------
+# Python virtual environment
+# -----------------------------
+.venv/
+venv/
+env/
+
+# -----------------------------
+# DuckDB warehouse
+# -----------------------------
+warehouse/warehouse.db
