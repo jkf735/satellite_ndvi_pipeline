@@ -4,7 +4,7 @@ LOG_SIZE_LIMIT = 50M
 LOG_DIR=logs
 
 
-.PHONY: up down reset logs psql clean_logs init full ingest_tiles ndvi clip zonal_stats warehouse
+.PHONY: up down reset logs psql clean_logs init full ingest_tiles ndvi clip zonal_stats warehouse s3_cog_upload
 
 # DOCKER PROCESSES
 up:
@@ -81,4 +81,10 @@ zonal_stats: clean_logs
 warehouse: clean_logs
 	python3 scripts/build_warehouse.py
 
+# S3 INTERACTION
+s3_cog_upload: clean_logs
+	python3 scripts/s3_cog_upload.py $(if $(filter true True 1,$(OVERWRITE)),--overwrite,)
+
+s3_stac_upload: clean_logs
+	python3 scripts/s3_stac_upload.py $(if $(filter true True 1,$(OVERWRITE)),--overwrite,)
 
