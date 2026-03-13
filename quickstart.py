@@ -10,6 +10,8 @@ import sys
 import logging
 import argparse
 import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
 import subprocess
 from pathlib import Path
 
@@ -93,7 +95,11 @@ def main(overwrite: bool = False):
 
     logger.info("=== NDVI Pipeline Quickstart ===")
 
-    s3_client = boto3.client("s3", region_name="us-east-1")
+    s3_client = boto3.client(
+    "s3",
+    region_name="us-east-1",
+    config=Config(signature_version=UNSIGNED)
+)
 
     logger.info("Step 1/2 — Downloading data from S3...")
     if not download_parquets(s3_client, overwrite=overwrite):
