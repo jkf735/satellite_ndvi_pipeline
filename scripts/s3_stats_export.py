@@ -23,8 +23,21 @@ from resources.config import DB_URI, S3_BUCKET_NAME, S3_STATS_KEY, S3_PARKS_VALI
 logger = logging.getLogger(__name__)
 
 
-def export_table_to_s3(table_name: str, s3_key: str, s3_client, engine) -> None:
-    """Export a Postgres table to parquet and upload to S3."""
+def export_table_to_s3(table_name: str, s3_key: str, s3_client: boto3.client, engine) -> None:
+    """
+    Export a Postgres table to parquet and upload to S3.
+
+    Parameters
+    ----------
+    table_name : str
+        Table name being uploaded (park_ndvi_stats or parks_validated)
+    s3_key : str
+        key for table being uploaded (i.e. "stats/park_ndvi_stats.parquet")
+    s3_client : boto3.client
+        Boto3 S3 client
+    engine :
+        Postgres engine
+    """
     logger.info(f"Reading {table_name}...")
     df = pd.read_sql(f"SELECT * FROM {table_name}", engine)
     logger.info(f"Read {len(df)} rows from {table_name}")
@@ -44,6 +57,9 @@ def export_table_to_s3(table_name: str, s3_key: str, s3_client, engine) -> None:
 
 
 def main():
+    """
+    Main function call for s3_stats_upload.py
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
