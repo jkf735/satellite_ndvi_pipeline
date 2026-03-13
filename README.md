@@ -61,7 +61,7 @@ satellite-ndvi-pipeline/
 |
 ├── sql/                    # SQL functions
 |   ├── qa/                 # QA functions (park_validation)
-|   └── schema/             # Functions to create tables (parks_raw, parks_ndvi_stats)
+|   └── schema/             # Functions to create tables (parks_raw, park_ndvi_stats)
 |
 ├── warehouse/              # Warehouse filestructure      
 |   ├── models/   
@@ -130,7 +130,7 @@ Initialize the initial tables in paostgres database:
 make init
 ```
 
-You can now inspect your database for the following tables: 'parks_ndvi_stats', 'parks_raw', 'parks_repaired', 'parks_validated', 'parks_qa_failures'.
+You can now inspect your database for the following tables: 'park_ndvi_stats', 'parks_raw', 'parks_repaired', 'parks_validated', 'parks_qa_failures'.
 
 If you used docker you can check your database at the created adminer service: http://localhost:8080/
 ---

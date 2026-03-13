@@ -1,3 +1,16 @@
+"""
+s3_stac_upload.py
+Uploads STAC files to s3 bucket for all COGs in S3 storage
+
+Inputs: 
+   - overwrite (bool): Optional flag (default = FALSE) to indicate if you want to skip an upload if the file exists or override it.
+Outputs: 
+   - STAC collection and catalog updated and new STAC items written 
+
+Usage:
+    python3 scripts/s3_stac_upload.py
+    make s3_stac_upload OVERWRITE=FALSE (False is default so you can leave this off or set it TRUE)
+"""
 import json
 import logging
 import boto3

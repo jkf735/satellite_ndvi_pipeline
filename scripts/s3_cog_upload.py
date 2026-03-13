@@ -8,7 +8,7 @@ Outputs:
    - Contents of data/processed uploaded to thhe s3 buckets '/processed' folder
 
 Usage:
-    python3 s3_cog_upload.py
+    python3 scripts/s3_cog_upload.py
     make s3_cog_upload OVERWRITE=FALSE (False is default so you can leave this off or set it TRUE)
 """
 import boto3
