@@ -141,10 +141,10 @@ def main():
     con.execute("CREATE SCHEMA IF NOT EXISTS marts;")
     
     # extract operational tables
-    logger.info("Extracting parks_raw...")
+    logger.info("Extracting parks_validated...")
     parks_df = extract_table("""
-        SELECT unit_code AS park_code, unit_name
-        FROM parks_raw
+        SELECT park_code, park_name AS unit_name
+        FROM parks_validated
     """)
 
     logger.info("Extracting park_ndvi_stats...")
@@ -154,7 +154,7 @@ def main():
     """)
 
     # load raw operational tables
-    logger.info("Loading parks_raw as raw.stg_parks")
+    logger.info("Loading parks_validated as raw.stg_parks")
     load_to_duckdb(con, "raw.stg_parks", parks_df)
     logger.info("Loading park_ndvi_stats as raw.stg_ndvi")
     load_to_duckdb(con, "raw.stg_ndvi", ndvi_df)
