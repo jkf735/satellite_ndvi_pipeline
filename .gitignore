@@ -5,13 +5,12 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.env               # local environment variables / credentials
-*.log               # log files
+.env                # local environment variables / credentials
 
 # -----------------------------
 # Data folders (large / generated)
 # -----------------------------
-data/raw/
+data/raw/*
 data/interim/
 data/processed/
 data/qa/
@@ -23,6 +22,19 @@ data/quickstart/
 *.prj
 *.shx
 *.cpg
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs/*
+!logs/.gitkeep
+*.log               # log files
+
+
+# exceptions for sentinel shapefile and park boundry geojson
+!data/raw/nps_boundary.geojson
+!data/raw/sentinel_shapefile/
+!data/raw/sentinel_shapefile/**
 
 # -----------------------------
 # Docker / local container artifacts
