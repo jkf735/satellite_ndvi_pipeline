@@ -4,7 +4,7 @@ LOG_SIZE_LIMIT = 50M
 LOG_DIR=logs
 
 
-.PHONY: up down reset logs psql clean_logs init full ingest_tiles ndvi clip zonal_stats warehouse s3_cog_upload
+.PHONY: up down reset logs psql clean_logs init full ingest_tiles ndvi clip zonal_stats warehouse s3_cog_upload s3_stac_upload s3_stats_export quickstart
 
 # DOCKER PROCESSES
 up:
@@ -77,9 +77,6 @@ zonal_stats: clean_logs
 		echo "Running zonal stats on $(FILE)..."; \
 		python3 scripts/compute_zonal_stats.py --file $(FILE); \
 	fi
-# WAREHOUSE
-warehouse: clean_logs
-	python3 scripts/build_warehouse.py
 
 # S3 INTERACTION
 s3_cog_upload: clean_logs
@@ -90,3 +87,11 @@ s3_stac_upload: clean_logs
 
 s3_stats_export:
 	python3 scripts/s3_stats_export.py
+
+# WAREHOUSE
+warehouse: clean_logs
+	python3 scripts/build_warehouse.py $(if $(filter true True 1,$(BOOTSTRAP)),--bootstrap,) $(if $(PARQUET_DIR),--parquet_dir $(PARQUET_DIR),)
+
+# QUICKSTART
+quickstart:
+	python3 quickstart.py $(if $(filter true True 1,$(OVERWRITE)),--overwrite,)
