@@ -32,7 +32,6 @@ logs/*
 
 
 # exceptions for sentinel shapefile and park boundry geojson
-!data/raw/nps_boundary.geojson
 !data/raw/sentinel_shapefile/
 !data/raw/sentinel_shapefile/**
 

@@ -12,13 +12,17 @@ Usage:
     make init
 """
 import os
+import boto3
 import logging
 import subprocess
+from pathlib import Path
 from glob import glob
 from datetime import datetime
+from botocore import UNSIGNED
+from botocore.config import Config
 from dotenv import load_dotenv
 from db import get_db_connection
-from resources.config import RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR, LOGS_DIR, RESOURCE_DIR, WAREHOUSE_DIR, MODELS_DIR
+from resources.config import RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR, LOGS_DIR, RESOURCE_DIR, WAREHOUSE_DIR, MODELS_DIR, S3_BUCKET_NAME
 
 load_dotenv()
 
@@ -146,6 +150,26 @@ def qa_table(conn):
     logger.info(f"===== QA END {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
     logger.info("QA complete. Log saved to logs/setup.log")
 
+def download_boundary_file(s3_client) -> bool:
+    """Download nps_boundary.geojson from S3 if not present locally."""
+    local_path = Path(RAW_DATA_DIR) / "nps_boundary.geojson"
+    
+    if local_path.exists():
+        logger.info("nps_boundary.geojson already exists, skipping.")
+        return True
+
+    try:
+        logger.info("Downloading nps_boundary.geojson from S3...")
+        s3_client.download_file(
+            S3_BUCKET_NAME,
+            "nps_boundary.geojson",
+            str(local_path)
+        )
+        logger.info("Downloaded nps_boundary.geojson successfully.")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to download nps_boundary.geojson: {e}")
+        return False
 
 def main():
     """
@@ -160,7 +184,10 @@ def main():
             logging.StreamHandler()
         ]
     )
-
+    s3_client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+    if not download_boundary_file(s3_client):
+        logger.error("Could not retrieve nps_boundary.geojson. Exiting.")
+        return
     check_env()
     ensure_directories()
 
