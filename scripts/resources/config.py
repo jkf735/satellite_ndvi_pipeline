@@ -40,3 +40,10 @@ CATALOG_ID = "ndvi-pipeline"
 COLLECTION_ID = "ndvi_cog"
 S3_STATS_KEY = "stats/park_ndvi_stats.parquet"
 S3_PARKS_VALID_KEY = "stats/parks_validated.parquet"
+
+# QUICKSTART
+QUICKSTART_DIR = PROJECT_ROOT / "data" / "quickstart"
+PARQUET_FILES = [
+    S3_STATS_KEY,
+    S3_PARKS_VALID_KEY
+]

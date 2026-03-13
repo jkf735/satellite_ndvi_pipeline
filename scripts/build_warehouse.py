@@ -3,18 +3,24 @@ build_warehouse.py
 Creates or updates and runs tests on a duckdb warehouse.db with dims, facts, and marts based off of data in parks_validated and park_ndvi_stats
 
 Inputs: 
-   - No arguments
+   - Optional arguments for quickstart mode:
+        - quickstart: bool
    - parks_validated and park_ndvi_stats exist and populated
 Outputs: 
    - warehouse/warehouse.db
 
 Usage:
-    python3 scripts/build_warehouse.py
-    make warehouse
+    Quickstart mode:
+        python3 scripts/build_warehouse.py --quickstart
+        make warehouse QUICKSTART=True
+    Pipeline mode:
+        python3 scripts/build_warehouse.py
+        make warehouse
 """
 import os
 import logging
 import duckdb
+import argparse
 import pandas as pd
 from db import get_db_connection
 
@@ -22,6 +28,26 @@ from resources.config import WAREHOUSE_DB, MODELS_DIR
 
 logger = logging.getLogger("build_warehouse")
 
+def extract_from_parquet(parquet_dir: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Load staging data from local parquet files for quickstart mode.
+
+    Parameters
+    ----------
+    parquet_dir: str
+        local directory with parquet tables
+    
+    Returns
+    ----------
+    tuple:
+        [parks dataframe, ndvi dataframe]
+    """
+    parks_df = pd.read_parquet(os.path.join(parquet_dir, "parks_validated.parquet"))
+    ndvi_df = pd.read_parquet(os.path.join(parquet_dir, "park_ndvi_stats.parquet"))
+    # align columns to match Postgres extract queries
+    parks_df = parks_df[["park_code", "park_name"]].rename(columns={"park_name": "unit_name"})
+    ndvi_df = ndvi_df[["park_code", "date", "mean_ndvi", "std_ndvi"]]
+    return parks_df, ndvi_df
 
 def extract_table(query: str) -> pd.DataFrame:
     """
@@ -44,7 +70,6 @@ def extract_table(query: str) -> pd.DataFrame:
         conn.close()
     return df
 
-
 def load_to_duckdb(con, table_name: str, df: pd.DataFrame) -> None:
     """
     Loads data from a dataframe into a table in duckdb warehouse
@@ -62,7 +87,6 @@ def load_to_duckdb(con, table_name: str, df: pd.DataFrame) -> None:
     con.register("temp_df", df)
     con.execute(f"CREATE OR REPLACE TABLE {table_name} AS SELECT * FROM temp_df")
     con.unregister("temp_df")
-
 
 def run_sql_models(con) -> None:
     """
@@ -117,7 +141,7 @@ def run_tests(con: duckdb.DuckDBPyConnection) -> None:
 
 
 # Main
-def main():
+def main(quickstart: bool = False, parquet_dir: str = "data/quickstart"):
     """
     Main function call for build_warehouse.py
     """
@@ -125,9 +149,9 @@ def main():
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
         handlers=[
-        logging.FileHandler("logs/warehouse.log"),
-        logging.StreamHandler()
-    ]
+            logging.FileHandler("logs/warehouse.log"),
+            logging.StreamHandler()
+        ]
     )
 
     logger.info("Connecting to DuckDB...")
@@ -136,29 +160,31 @@ def main():
     except:
         logger.error(f"Failed to connect to {WAREHOUSE_DB}")
         return
+
     con.execute("CREATE SCHEMA IF NOT EXISTS raw;")
     con.execute("CREATE SCHEMA IF NOT EXISTS analytics;")
     con.execute("CREATE SCHEMA IF NOT EXISTS marts;")
-    
-    # extract operational tables
-    logger.info("Extracting parks_validated...")
-    parks_df = extract_table("""
-        SELECT park_code, park_name AS unit_name
-        FROM parks_validated
-    """)
 
-    logger.info("Extracting park_ndvi_stats...")
-    ndvi_df = extract_table("""
-        SELECT park_code, date, mean_ndvi, std_ndvi
-        FROM park_ndvi_stats
-    """)
+    if quickstart:
+        logger.info("Bootstrap mode — loading from parquet...")
+        parks_df, ndvi_df = extract_from_parquet(parquet_dir)
+    else:
+        logger.info("Extracting parks_validated...")
+        parks_df = extract_table("""
+            SELECT park_code, park_name AS unit_name
+            FROM parks_validated
+        """)
+        logger.info("Extracting park_ndvi_stats...")
+        ndvi_df = extract_table("""
+            SELECT park_code, date, mean_ndvi, std_ndvi
+            FROM park_ndvi_stats
+        """)
 
     # load raw operational tables
     logger.info("Loading parks_validated as raw.stg_parks")
     load_to_duckdb(con, "raw.stg_parks", parks_df)
     logger.info("Loading park_ndvi_stats as raw.stg_ndvi")
     load_to_duckdb(con, "raw.stg_ndvi", ndvi_df)
-
 
     # run dimensional models
     run_sql_models(con)
@@ -169,4 +195,17 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--quickstart",
+        action="store_true",
+        help="Build warehouse from local parquet files instead of Postgres."
+    )
+    parser.add_argument(
+        "--parquet_dir",
+        type=str,
+        default="data/quickstart",
+        help="Directory containing parquet files for quickstart mode."
+    )
+    args = parser.parse_args()
+    main(quickstart=args.quickstart, parquet_dir=args.parquet_dir)
