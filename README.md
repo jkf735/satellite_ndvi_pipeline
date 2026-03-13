@@ -277,9 +277,12 @@ s3://your-bucket/
 │   │   └── ndvi_cog.json
 │   └── items/
 │       └── {park_name}_{year}_{month}_{day}_NDVI.json  # STAC items
-└── stats/
-    ├── park_ndvi_stats.parquet
-    └── parks_validated.parquet
+├── stats/
+│   ├── park_ndvi_stats.parquet
+│   └── parks_validated.parquet
+|
+└── nps_boundary.geojson
+
 ```
 
 COGs are queryable via the STAC catalog and streamed directly from S3 by the dashboard map layer using Titiler.
