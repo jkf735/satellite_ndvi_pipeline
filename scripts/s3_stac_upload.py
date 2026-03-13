@@ -186,6 +186,9 @@ def build_catalog(item_ids: list[str]) -> dict:
 
 # MAIN
 def main(skip_existing: bool = True):
+    """
+    Main function call for s3_stac_upload.py
+    """
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
