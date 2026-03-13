@@ -41,7 +41,7 @@ init:
 full: clean_logs
 	@if [ -z "$(PARKS)" ] || [ -z "$(YEARS)" ] || [ -z "$(MONTHS)" ]; then \
 		echo "ERROR: Must provide PARKS, YEARS, and MONTHS and CLEANUP"; \
-		echo 'Usage: make full PARKS="yosemitie zion" YEARS="2024 2025" MONTHS="2 3 4 5 6 7" CLEANUP=True'; \
+		echo 'Usage: make full PARKS="yosemite zion" YEARS="2024 2025" MONTHS="2 3 4 5 6 7" CLEANUP=True'; \
 	else \
 		python3 scripts/full_ingest.py --parks $(PARKS) --years $(YEARS) --months $(MONTHS) $(if $(filter true True 1,$(CLEANUP)),--cleanup,); \
 	fi
