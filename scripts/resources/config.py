@@ -31,3 +31,10 @@ DB_URI = os.getenv(
     "DB_URI",
     "postgresql://geo_user:geo_pass@localhost:5432/geo"
 )
+
+# S3
+S3_BUCKET_NAME = "satellite-ndvi-pipeline"
+PROCESSED_PREFIX = "processed/"
+STAC_PREFIX = "stac/"
+CATALOG_ID = "ndvi-pipeline"
+COLLECTION_ID = "ndvi_cog"

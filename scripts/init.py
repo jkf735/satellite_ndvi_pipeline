@@ -22,14 +22,7 @@ from resources.config import RAW_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR,
 
 load_dotenv()
 
-# -------------------------
-# Logging
-# -------------------------
 logger = logging.getLogger("init")
-
-# -------------------------
-# Directories
-# -------------------------
 REQUIRED_FOLDERS = [
     RAW_DATA_DIR,
     INTERIM_DATA_DIR,
@@ -40,9 +33,7 @@ REQUIRED_FOLDERS = [
     MODELS_DIR
 ]
 
-# -------------------------
-# Env check
-# -------------------------
+
 def check_env():
     required_env_vars = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT"]
     missing = [v for v in required_env_vars if not os.getenv(v)]
@@ -50,17 +41,13 @@ def check_env():
         logger.error(f"Missing required env vars: {', '.join(missing)}. Please edit your .env file.")
         raise SystemExit(1)
 
-# -------------------------
-# Directories
-# -------------------------
+
 def ensure_directories():
     for folder in REQUIRED_FOLDERS:
         os.makedirs(folder, exist_ok=True)
         logger.info(f"Ensured directory exists: {folder}")
 
-# -------------------------
-# SQL execution
-# -------------------------
+
 def run_sql_file(conn, sql_file_path):
     """Run a single SQL file"""
     logger.info(f"Running SQL: {sql_file_path}")
@@ -87,9 +74,7 @@ def run_all_sql(conn):
     for sql_file in schema_files:
         run_sql_file(conn, sql_file)
 
-# -------------------------
-# Ingest
-# -------------------------
+
 def ingest_table(file: str = RAW_DATA_DIR / "nps_boundary.geojson", table: str = "parks_raw"):
     """Ingest a spatial file into PostGIS via ogr2ogr"""
     pg_dsn = (
@@ -124,11 +109,9 @@ def ingest_table(file: str = RAW_DATA_DIR / "nps_boundary.geojson", table: str =
 
     logger.info(f"Ingested '{file}' → table '{table}' successfully.")
 
-# -------------------------
-# QA
-# -------------------------
+
 def qa_table(conn):
-    """Run parks QA validation SQL and print a metrics summary"""
+    """Run parks QA validation SQL and log a metrics summary"""
     qa_file = os.path.join("sql", "qa", "01_parks_validation.sql")
     qa_metrics = [
         ("total_raw",  "SELECT COUNT(*) AS total_raw FROM parks_raw;"),
@@ -163,9 +146,7 @@ def qa_table(conn):
     logger.info(f"===== QA END {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
     logger.info("QA complete. Log saved to logs/setup.log")
 
-# -------------------------
-# Main
-# -------------------------
+
 def main():
     """
     Main function call for init.py
