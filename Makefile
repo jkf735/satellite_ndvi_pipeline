@@ -88,3 +88,5 @@ s3_cog_upload: clean_logs
 s3_stac_upload: clean_logs
 	python3 scripts/s3_stac_upload.py $(if $(filter true True 1,$(OVERWRITE)),--overwrite,)
 
+s3_stats_export:
+	python3 scripts/s3_stats_export.py

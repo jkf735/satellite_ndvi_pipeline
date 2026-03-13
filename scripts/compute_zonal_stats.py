@@ -1,11 +1,11 @@
 """
 compute_zonal_stats.py
-Adds new data from all files in data/processed to parks_ndvi_stats table
+Adds new data from all files in data/processed to park_ndvi_stats table
 
 Inputs: 
    - file name (specific file to upload), IF empty then all files in data/processed
 Outputs: 
-   - parks_ndvi_stats populated with [park_name, park_code, date, year, month, mean_ndvi, std_ndvi, min_ndvi, max_ndvi, valid_pixels, source_raster] from new fiels
+   - park_ndvi_stats populated with [park_name, park_code, date, year, month, mean_ndvi, std_ndvi, min_ndvi, max_ndvi, valid_pixels, source_raster] from new fiels
 
 Usage:
     python3 scripts/compute_zonal_stats.py --file <file_name> (name example: yosemite_2025_11_2_NDVI.tif)
