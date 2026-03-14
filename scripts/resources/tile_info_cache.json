@@ -1,669 +1,112 @@
 {
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/1/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/1/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/2/": {
-        "2": false,
-        "4": true,
-        "7": false,
-        "9": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/2/": {
-        "4": false,
-        "9": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/3/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/3/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/4/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/4/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/5/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/5/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/7/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/7/": {
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/8/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/8/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/9/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/9/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/10/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/10/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2025/12/": {
-        "1": true,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2025/12/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/2/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/3/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/4/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/5/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/6/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/7/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/8/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/9/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/10/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/11/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2025/12/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/1/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/2/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/3/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/4/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/5/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/6/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/7/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/8/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/9/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/10/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/11/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2024/12/": {
-        "5": false,
-        "7": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/2/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/2/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/3/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/3/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/4/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/4/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/5/": {
-        "3": false,
-        "5": false,
-        "8": false,
-        "10": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/5/": {
-        "10": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/6/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/6/": {
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/7/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/7/": {
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/8/": {
-        "1": false,
-        "6": false,
-        "8": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/8/": {
-        "8": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/9/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/9/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/10/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/10/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/11/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/11/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2024/12/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2024/12/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/2/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/2/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/3/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/3/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/4/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/4/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/5/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/5/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/6/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/6/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/7/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/7/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/8/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/8/": {
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/9/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/9/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/10/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/10/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/11/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/11/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2023/12/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2023/12/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/1/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/2/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/3/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/4/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/5/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/6/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/7/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/8/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/9/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/10/": {
-        "2": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/11/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2023/12/": {
-        "1": false,
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/1/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/1/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/2/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/2/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/3/": {
-        "2": true,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/3/": {
-        "2": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/4/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/4/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/5/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/5/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/6/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/6/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/7/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/7/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/8/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/8/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/9/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/9/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/10/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/10/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/11/": {
-        "2": true,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/11/": {
-        "2": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2023/12/": {
-        "2": true,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2023/12/": {
-        "2": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/1/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/1/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/2/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/2/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/3/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/3/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/4/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/4/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/5/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/5/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/6/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/6/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/7/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/7/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/8/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/8/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/9/": {
-        "2": true,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/9/": {
-        "2": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/10/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/10/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/11/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/11/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2024/12/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2024/12/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/1/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/1/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/2/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/2/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/3/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/3/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/4/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/4/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/5/": {
-        "3": false,
-        "5": true,
-        "7": true,
-        "8": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/5/": {
-        "5": false,
-        "7": false,
-        "8": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/6/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/6/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/7/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/7/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/8/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/8/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/9/": {
-        "2": true,
-        "4": true,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/9/": {
-        "2": false,
-        "4": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/10/": {
-        "2": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/10/": {
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/11/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/11/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2025/12/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2025/12/": {
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2026/1/": {
-        "3": false,
-        "5": false,
-        "8": false,
-        "10": true,
-        "13": false,
-        "15": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2026/1/": {
-        "10": false,
-        "15": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2026/2/": {
-        "2": false,
-        "4": true,
-        "7": false,
-        "9": true,
-        "12": false,
-        "14": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2026/2/": {
-        "4": false,
-        "9": false,
-        "14": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2026/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2026/2/": {
-        "3": false,
-        "5": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2026/1/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2026/1/": {
-        "3": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2026/2/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2026/2/": {
-        "2": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EJ/2022/1/": {
-        "1": true,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/19/T/EK/2022/1/": {
-        "1": false,
-        "4": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KC/2022/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/11/S/KB/2022/1/": {
-        "1": true
-    },
-    "s3://sentinel-s2-l2a/tiles/12/S/UG/2022/1/": {
-        "2": true
+    "19TEJ/19TEK/2022/6/3": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "3",
+        "score": 99.476933
+    },
+    "19TEJ/19TEK/2022/6/5": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "5",
+        "score": 74.47006400000001
+    },
+    "19TEJ/19TEK/2022/6/8": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "8",
+        "score": 101.397342
+    },
+    "19TEJ/19TEK/2022/6/10": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "10",
+        "score": 50.940174
+    },
+    "19TEJ/19TEK/2022/6/13": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "13",
+        "score": 101.624318
+    },
+    "19TEJ/19TEK/2022/6/15": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "15",
+        "score": 36.725787
+    },
+    "19TEJ/19TEK/2022/6/18": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "18",
+        "score": 97.109893
+    },
+    "19TEJ/19TEK/2022/6/20": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "20",
+        "score": 104.319632
+    },
+    "19TEJ/19TEK/2022/6/23": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "23",
+        "score": 29.547418
+    },
+    "19TEJ/19TEK/2022/6/25": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "25",
+        "score": 32.821777
+    },
+    "19TEJ/19TEK/2022/6/28": {
+        "combo": [
+            "19TEJ",
+            "19TEK"
+        ],
+        "year": 2022,
+        "month": 6,
+        "day": "28",
+        "score": 32.897988000000005
     }
 }
