@@ -132,7 +132,7 @@ class AWS_INTERFACE:
     def get_combo_score(self, combo: list, day: str, year, month) -> float | None:
         """
         Score a tile combination for a given day.
-        Uses worst tile score in the combo (most conservative).
+        Scores on a weighted sum of the metadata score (The first tile in a combo covers the most area and so on)
         Returns None if any tile metadata is unavailable.
 
         Parameters
@@ -154,7 +154,18 @@ class AWS_INTERFACE:
             if score is None:
                 return None
             scores.append(score)
-        return max(scores)  # worst tile score
+
+        # weight by position — first tile covers most of park so weighted highest
+        # weights: 1 tile = [1.0], 2 tiles = [0.7, 0.3], 3 tiles = [0.6, 0.3, 0.1]
+        weights = [1.0, 0.7, 0.5, 0.4, 0.3]
+        tile_weights = weights[:len(scores)]
+        # normalize so they sum to 1
+        total = sum(tile_weights)
+        tile_weights = [w / total for w in tile_weights]
+
+        weighted_score = sum(s * w for s, w in zip(scores, tile_weights))
+        logger.info(f"Combo {combo} day {day} — weighted score: {weighted_score:.1f}")
+        return weighted_score
 
     def find_best_tile(self, tile_list: list, year, month, max_score: float = 150.0) -> tuple:
         """
@@ -162,7 +173,7 @@ class AWS_INTERFACE:
         and selecting the lowest scoring (cleanest) combination.
 
         Score = CLOUDY_PIXEL_PERCENTAGE + NODATA_PIXEL_PERCENTAGE per tile,
-        combo score = worst tile score in combination.
+        combo score = worst average tile score in combination.
 
 
         Parameters
