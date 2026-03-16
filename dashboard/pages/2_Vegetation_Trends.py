@@ -96,7 +96,7 @@ fig_ts.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     legend=dict(orientation="h", yanchor="bottom", y=1.02)
 )
-st.plotly_chart(fig_ts, use_container_width=True)
+st.plotly_chart(fig_ts, width='stretch')
 
 st.markdown("---")
 
@@ -136,4 +136,4 @@ fig_season.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     legend_title_text="Park"
 )
-st.plotly_chart(fig_season, use_container_width=True)
+st.plotly_chart(fig_season, width='stretch')

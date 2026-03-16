@@ -157,7 +157,13 @@ with map_col:
     colorscale.add_to(m)
 
     folium.LayerControl().add_to(m)
-    st_folium(m, width=None, height=600, returned_objects=[])
+    st_folium(
+        m,
+        width=None,
+        height=600,
+        returned_objects=[],
+        key=f"{selected_park}_{selected_year}_{selected_month}"
+    )
 
 with stats_col:
     st.markdown("### Stats")
