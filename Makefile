@@ -98,6 +98,6 @@ quickstart:
 
 # DASHBOARD:
 dashboard:
-	streamlit run dashboard/app.py
+	streamlit run dashboard/Overview.py
 titiler:
 	uvicorn dashboard.titiler_app:app --host localhost --port 8001
