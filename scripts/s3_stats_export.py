@@ -14,7 +14,7 @@ Usage:
 import logging
 import boto3
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from io import BytesIO
 
 from resources.config import DB_URI, S3_BUCKET_NAME, S3_STATS_KEY, S3_PARKS_VALID_KEY
@@ -39,7 +39,9 @@ def export_table_to_s3(table_name: str, s3_key: str, s3_client: boto3.client, en
         Postgres engine
     """
     logger.info(f"Reading {table_name}...")
-    df = pd.read_sql(f"SELECT * FROM {table_name}", engine)
+    with engine.connect() as conn:
+        result = conn.execute(text(f"SELECT * FROM {table_name}"))
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
     logger.info(f"Read {len(df)} rows from {table_name}")
 
     buffer = BytesIO()

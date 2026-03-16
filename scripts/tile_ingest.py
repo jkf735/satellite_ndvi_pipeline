@@ -5,7 +5,7 @@ Downloads all S3 tiles (B04 and B08 bands) needed to cover a parks entire area i
 Inputs: Park_name, year, month
 Outputs: 
     - All raw s3 tile .jp2 files needed to cover entire park area in data/raw/{park_name} (name example: 19TEJ_2025_11_2_B08.tif)
-    - B04 and B08 .tif files (mosaiced if needed) in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+    - B04 and B08 .tif files (mosaicked if needed) in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
 
 Usage:
     python3 tile_ingest.py --park yosemite --year 2025 --month 11
@@ -20,13 +20,13 @@ import subprocess
 import rasterio
 import geopandas as gpd
 import xml.etree.ElementTree as ET
-from sqlalchemy import create_engine, text
+from db import get_db_connection
 from shapely.ops import unary_union
 from rasterio.merge import merge
 
 from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_DATA_DIR, INTERIM_DATA_DIR, DB_URI
 
-logger = logging.getLogger("tile_ingets")
+logger = logging.getLogger(__name__)
 os.environ["GDAL_PAM_ENABLED"] = "NO"
 
 class AWS_INTERFACE:
@@ -35,7 +35,7 @@ class AWS_INTERFACE:
         try:
             with open(RESOURCE_DIR / "tile_info_cache.json", 'r', encoding='utf-8') as f:
                 self.tile_month_cache = json.load(f)
-            logger.info(f"Successfully loadded {RESOURCE_DIR / "tile_info_cache.json"}")
+            logger.info(f"Successfully loaded {RESOURCE_DIR / "tile_info_cache.json"}")
         except:
             self.tile_month_cache = {}
             logger.warning(f"Failed to load {RESOURCE_DIR / "tile_info_cache.json"}. Process will continue but may be slower than usual.")
@@ -179,7 +179,7 @@ class AWS_INTERFACE:
         Parameters
         ----------
         tile_list : list of lists
-            list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+            list of every combination of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
         year: int or str
             year being looked at (e.g. 2025)
         month: int or str
@@ -286,7 +286,7 @@ def check_if_needed_files_exist(required_tiles:list, park:str, year, month) -> l
     Parameters
     ----------
     required_tiles : list of lists
-            list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+            list of every combination of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
     park: str
         park being looked at (e.g. yosemite)
     year: int or str
@@ -317,7 +317,7 @@ def check_if_needed_files_exist(required_tiles:list, park:str, year, month) -> l
             return combo
     return []
         
-def find_tiles(park_name:str) -> list:
+def find_tiles(park_name: str) -> list:
     """
     Return list of lists of tile combinations that cover the full park area based on the sentinel_shapefile
 
@@ -329,43 +329,56 @@ def find_tiles(park_name:str) -> list:
     Returns
     ----------
     list of lists
-        list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+        list of every combination of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
     """
     # load sentinel shapefile
     tiles_gdf = gpd.read_file(SENTINEL_PATH)
     if tiles_gdf.empty:
         logger.error(f"Error in find_tiles: Issue opening Sentinel Shapefile at {SENTINEL_PATH}")
         raise ValueError(f"Issue opening Sentinel Shapefile at {SENTINEL_PATH}")
-    # connect to PostGIS
-    engine = create_engine(DB_URI)
-    # pull park boundary
-    query = f"""
-        SELECT geom
-        FROM parks_validated
-        WHERE park_name ILIKE '{park_name}%'
-    """
-    park_gdf = gpd.read_postgis(text(query), engine, geom_col="geom")
-    if park_gdf.empty:
+
+    # pull park boundary via psycopg2 to avoid pandas/SQLAlchemy version issues
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT ST_AsEWKB(geom) as geom
+                FROM parks_validated
+                WHERE park_name ILIKE '{park_name}%'
+            """)
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
         logger.warning(f"ABORTING RUN IN 'find_tiles': No {park_name} geometry found in database.")
         raise ValueError(f"No {park_name} geometry found in database.")
+
+    from shapely import wkb
+    geometries = [wkb.loads(bytes(row[0])) for row in rows]
+    park_gdf = gpd.GeoDataFrame(geometry=geometries, crs="EPSG:4326")
+
     park_gdf = park_gdf.to_crs(tiles_gdf.crs)
-    park_geom = park_gdf.geom.iloc[0]   
+    park_geom = park_gdf.geometry.iloc[0]
+
     # get intersecting tiles
     intersecting_tiles = tiles_gdf[tiles_gdf.intersects(park_geom)].copy()
-    # reproject those tiles and find the intersecton area in m^2
+
+    # re-project those tiles and find the intersection area in m^2
     utm_crs = park_gdf.estimate_utm_crs()
     park_proj = park_gdf.to_crs(utm_crs)
     park_proj_geom = park_proj.geometry.iloc[0]
     tiles_proj = intersecting_tiles.to_crs(utm_crs)
     tiles_proj["intersection_geom"] = tiles_proj.geometry.intersection(park_proj_geom)
     tiles_proj["intersection_area"] = tiles_proj["intersection_geom"].area
-    # get every combination of full coverage in order from least to most tiles (sub-order by coverage area)
+
+    # get every combination of full coverage in order from least to most tiles
     tiles_proj = tiles_proj.sort_values(by="intersection_area")
     geoms = tiles_proj.geometry.tolist()
     names = tiles_proj["Name"].tolist()
     n = len(geoms)
     list_of_lists = []
-    for r in range(1, n+1):
+    for r in range(1, n + 1):
         for combo_indices in itertools.combinations(range(n), r):
             combined = unary_union([geoms[i] for i in combo_indices])
             if combined.contains(park_proj_geom):
@@ -375,7 +388,7 @@ def find_tiles(park_name:str) -> list:
 
 def generate_tif(input_files:list, output_folder) -> None:
     """
-    Generate a tif file for each band of given input files. If multiple files then they will be moasiced (based on band) from input file list
+    Generate a tif file for each band of given input files. If multiple files then they will be mosaicked (based on band) from input file list
 
     Parameters
     ----------
@@ -389,7 +402,7 @@ def generate_tif(input_files:list, output_folder) -> None:
         raise ValueError("No input files provided to generate_tif")
     if not os.path.isdir(output_folder):
         os.makedirs(output_folder, exist_ok=True)
-    # sort by band into seperate lists
+    # sort by band into separate lists
     tile_dict = {}
     for i in input_files:
         band = str(i).split('_')[-1]
@@ -475,7 +488,7 @@ def ingest_tiles(park:str, year, month) -> None:
     required_tiles = find_tiles(park)
     # check if any of those combo are already saved locally
     combo = check_if_needed_files_exist(required_tiles, park, year, month)
-    # if no suitable local files, retreive them using aws s3 cli
+    # if no suitable local files, retrieve them using aws s3 cli
     if not combo:
         logger.info(f'No suitable combination of files are currently downloaded for {park} on {year}-{month}')
         logger.info("Searching AWS S3 for suitable tiles...")
