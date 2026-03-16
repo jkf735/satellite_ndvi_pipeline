@@ -1,5 +1,9 @@
 # satellite-ndvi-pipeline
 
+## 🌿 [Live Dashboard](https://satellite-ndvi-pipeline.streamlit.app/)
+
+---
+
 ## Overview
 
 An end-to-end geospatial data pipeline for processing satellite-derived NDVI (Normalized Difference Vegetation Index) data across US National Parks. The pipeline ingests Sentinel-2 imagery, produces Cloud Optimized GeoTIFFs (COGs), computes zonal statistics, and models the results in a DuckDB analytical warehouse.
@@ -33,10 +37,12 @@ flowchart TD
 
 Get the warehouse and dashboard running locally in minutes — no satellite data processing, no Docker, no Postgres required.
 
+> **Just want to see the dashboard?** Visit the [live hosted version](https://satellite-ndvi-pipeline.streamlit.app/) — no setup needed.
+
 ### Prerequisites
 
 - Python 3.10+
-- NO AWS credentials currently needed at this time but that may change in future updates
+- No AWS credentials required
 
 ### Steps
 
@@ -53,7 +59,7 @@ pip install -r requirements.txt
 
 **3. Run quickstart**
 
-The quickstart script downloads pre-processed statistics from S3 and builds the local DuckDB warehouse:
+Downloads pre-processed statistics from S3 and builds the local DuckDB warehouse:
 ```bash
 python3 quickstart.py
 ```
@@ -63,7 +69,7 @@ To re-download fresh data from S3:
 python3 quickstart.py --overwrite
 ```
 
-To look inside the databse:
+To inspect the warehouse directly:
 ```bash
 duckdb warehouse/warehouse.db
 .help
@@ -71,7 +77,14 @@ duckdb warehouse/warehouse.db
 
 **4. Launch the dashboard**
 ```bash
-streamlit run dashboard/app.py
+streamlit run dashboard/Overview.py
+```
+
+The dashboard will open at `http://localhost:8501`.
+
+**Note:** The NDVI Map page requires a running Titiler instance. To enable it locally run this in a second terminal:
+```bash
+uvicorn dashboard.titiler_app:app --host 0.0.0.0 --port 8001
 ```
 
 ---
@@ -91,7 +104,7 @@ The full pipeline downloads raw Sentinel-2 tiles, processes them into COGs, comp
 
 **1. Clone the repo**
 ```bash
-git clone https://github.com/jkf735/satellite-ndvi-pipeline.git
+git clone https://github.com/jkf735/satellite_ndvi_pipeline.git
 cd satellite-ndvi-pipeline
 ```
 
@@ -144,8 +157,8 @@ make full PARKS="yosemite zion" YEARS="2024 2025" MONTHS="2 3 4 5 6 7" CLEANUP=T
 # Build the DuckDB warehouse from Postgres
 make warehouse
 
-# Launch the dashboard
-streamlit run dashboard/app.py
+# Launch the dashboard locally
+streamlit run dashboard/Overview.py
 ```
 
 Individual pipeline steps can also be run separately:
@@ -166,6 +179,7 @@ If you want to publish to your own S3 bucket rather than cloning the project dat
 4. Run the upload commands below
 
 If you just want to add data locally without publishing to S3, you can skip these steps and just run `make warehouse` after ingestion.
+
 ```bash
 # Upload new COGs
 make s3_cog_upload
@@ -187,7 +201,7 @@ satellite-ndvi-pipeline/
 ├── quickstart.py               # Quick start script for new users
 │
 ├── data/
-│   ├── raw/                    # Downloaded Sentinel-2 JP2 tiles, nps_boundary.geojson, sentinel_shapfiles
+│   ├── raw/                    # Downloaded Sentinel-2 JP2 tiles, nps_boundary.geojson, sentinel_shapefiles
 │   ├── interim/                # Mosaic and NDVI outputs
 │   ├── processed/              # Park-clipped COG outputs
 │   └── quickstart/             # Parquet files downloaded by quickstart
@@ -223,11 +237,17 @@ satellite-ndvi-pipeline/
 │   └── warehouse.db            # Local DuckDB warehouse
 │
 ├── dashboard/
-│   └── app.py                  # Streamlit dashboard
+│   ├── Overview.py             # Dashboard entry point
+│   ├── titiler_app.py          # Local Titiler tile server
+│   ├── db.py                   # DuckDB connection helper
+│   ├── static/                 # Pipeline stage images
+│   └── pages/                  # Dashboard pages
+│
+├── titiler_service/            # Hosted Titiler deployment (Render)
 │
 ├── .env.example                # Environment variable template
 ├── Makefile                    # Pipeline commands
-├── requirements.txt       # Quick start dependencies
+├── requirements.txt            # Quick start dependencies
 ├── requirements-full.txt       # Full pipeline dependencies
 └── README.md
 ```
@@ -258,7 +278,7 @@ raw → dimensions → facts → marts
 - `marts.mart_ndvi_trend` — rolling NDVI trends
 - `marts.mart_declining_parks` — long-term NDVI slope per park
 - `marts.mart_ndvi_seasonality` — seasonal NDVI averages
-- `marts.mart_ndvi_anomalies` — z-score based anomaly detection
+- `marts.mart_ndvi_anomalies` — z-score based anomaly detection per calendar month
 
 ---
 
@@ -267,7 +287,7 @@ raw → dimensions → facts → marts
 Processed COGs and catalog metadata are stored in S3 with the following structure:
 
 ```
-s3://your-bucket/
+s3://satellite-ndvi-pipeline/
 ├── processed/
 │   └── {park_name}/
 │       └── {park_name}_{year}_{month}_{day}_NDVI.tif   # COGs
@@ -280,9 +300,23 @@ s3://your-bucket/
 ├── stats/
 │   ├── park_ndvi_stats.parquet
 │   └── parks_validated.parquet
-|
 └── nps_boundary.geojson
-
 ```
 
 COGs are queryable via the STAC catalog and streamed directly from S3 by the dashboard map layer using Titiler.
+
+---
+
+## Known Limitations
+
+**Tile Selection** — Tile selection relies on `CLOUDY_PIXEL_PERCENTAGE` from Sentinel-2 `metadata.xml`. This metric does not capture all atmospheric interference — thin cirrus clouds and coastal haze can pass the filter while still degrading NDVI values. A weighted scoring algorithm selects the best available tile per month but cannot guarantee a clean tile exists for every month in every year.
+
+**Processing Baseline Discontinuity** — ESA changed the Sentinel-2 L2A processing baseline from N0400 to N0500 in 2022, introducing a systematic offset in surface reflectance values. Pre and post 2022 NDVI values are not directly comparable. Therefore, pre 2022 data is currently excluded.
+
+**Sentinel Value Filtering** — Pixels with NDVI below -0.4 are excluded from zonal statistics as they represent corrupted or invalid data rather than real surface reflectance. This threshold was determined empirically from the distribution of pixel values.
+
+**Coastal Tile Coverage** — For coastal parks (Acadia), Sentinel-2 tile boundaries frequently include large ocean areas which inflate nodata percentages in tile metadata. Coverage scoring accounts for this through tile position weighting.
+
+**Snow and Non-Vegetated Pixels** — Yosemite contains significant areas of exposed granite, water bodies, and seasonal snow which permanently suppress park-wide mean NDVI. Month-to-month variance is higher for Yosemite than Zion or Acadia for this reason.
+
+**Anomaly Detection** — Z-scores are computed per park per calendar month across available years. Months with only one year of data return null z-scores and are excluded from anomaly detection.
