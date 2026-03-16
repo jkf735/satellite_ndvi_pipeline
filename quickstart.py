@@ -112,7 +112,7 @@ def main(overwrite: bool = False):
         sys.exit(1)
 
     logger.info("=== Quickstart complete. Warehouse is ready at warehouse/warehouse.db. ===")
-    # TODO logger.info("Run: streamlit run dashboard/app.py")
+    logger.info("Run: streamlit run dashboard/app.py")
 
 
 if __name__ == "__main__":

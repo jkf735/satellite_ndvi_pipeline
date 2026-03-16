@@ -4,7 +4,7 @@ Clips interim NDVI.tif file to just park outline
 
 Inputs: 
    - Park_name, year, month
-   - coresponding NDVI.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
+   - corresponding NDVI.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
 Outputs: 
    - clipped NDVI.tif file created in data/processed (name example: yosemite_2025_11_2_NDVI.tif)
 
@@ -17,6 +17,7 @@ import logging
 import argparse
 import rasterio
 from pathlib import Path
+from shapely import wkb
 import numpy as np
 import geopandas as gpd
 from rasterio.mask import mask
@@ -24,7 +25,7 @@ from rasterio.features import geometry_mask
 from rasterio.enums import Resampling
 import rasterio.shutil as rio_shutil
 from rio_cogeo.cogeo import cog_validate
-from sqlalchemy import create_engine, text
+from db import get_db_connection
 
 from resources.config import DB_URI, INTERIM_DATA_DIR, PROCESSED_DATA_DIR
 
@@ -89,26 +90,32 @@ def clip_ndvi_to_park(park_name: str, ndvi_path, output_path) -> bool:
     if os.path.exists(output_path):
         logger.warning(f'Clipped NDVI file already exist at {output_path}. If you want to clip again, delete the current raster and run again.')
         return False
-    
-    # connect to PostGIS
-    logger.info("Connecting to PostGIS database...")
-    engine = create_engine(DB_URI)
 
-    # pull park boundary
+    # pull park boundary via psycopg2
+    logger.info("Connecting to PostGIS database...")
     logger.info(f"Querying 'parks_validated' table for park_name like '{park_name}%'...")
-    query = f"""
-        SELECT geom
-        FROM parks_validated
-        WHERE park_name ILIKE '{park_name}%'
-    """
-    park_gdf = gpd.read_postgis(text(query), engine, geom_col="geom")
-    if park_gdf.empty:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT ST_AsEWKB(geom) as geom
+                FROM parks_validated
+                WHERE park_name ILIKE '{park_name}%'
+            """)
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
         logging.error(f"No {park_name} geometry found in database.")
         raise ValueError(f"No {park_name} geometry found in database.")
-    
+
+    geometries_shapely = [wkb.loads(bytes(row[0])) for row in rows]
+    park_gdf = gpd.GeoDataFrame(geometry=geometries_shapely, crs="EPSG:4326")
+
     logger.info("Reading inputs...")
     with rasterio.open(ndvi_path) as src:
-        # reproject park to raster CRS
+        # re-project park to raster CRS
         raster_crs = src.crs
         if park_gdf.crs != raster_crs:
             park_gdf = park_gdf.to_crs(raster_crs)
@@ -189,7 +196,6 @@ def write_cog(array: np.ndarray, profile: dict, output_path: Path) -> bool:
         "interleave": "band",
         "count": 1
     })
-    # cog_profile.pop("blockysize", None)
 
     # COGs require a temp file first — overviews must be built before the final file is written
     tmp_path = str(output_path).replace(".tif", "_tmp.tif")
@@ -318,8 +324,8 @@ def main(park=None, year=None, month=None):
     logging.info(f'CLIPING NDVI FILE TO PARK BOUNDARY: {park}, {year}, {month}')
     ndvi_file = find_ndvi(input_folder, year, month)
     ndvi_path = input_folder / ndvi_file
-    ouput_file = park.lower() + '_' + ndvi_file
-    output_path = PROCESSED_DATA_DIR / ouput_file
+    output_file = park.lower() + '_' + ndvi_file
+    output_path = PROCESSED_DATA_DIR / output_file
     complete = clip_ndvi_to_park(park, ndvi_path, output_path)
     if complete:
         logging.info(f'COMPLETED CLIPPING {park}, {year}, {month}')

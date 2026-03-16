@@ -1,6 +1,13 @@
 python-dotenv==1.0.1
 duckdb==1.4.4
-pandas==2.1.4
+pandas==2.3.3
 pyarrow==23.0.1
 fastparquet==2025.12.0
 boto3==1.42.67
+streamlit==1.55.0
+plotly==6.6.0
+titiler.core==2.0.0
+titiler.application==2.0.0
+uvicorn==0.42.0
+folium==0.20.0
+streamlit-folium==0.26.2

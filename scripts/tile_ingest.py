@@ -5,7 +5,7 @@ Downloads all S3 tiles (B04 and B08 bands) needed to cover a parks entire area i
 Inputs: Park_name, year, month
 Outputs: 
     - All raw s3 tile .jp2 files needed to cover entire park area in data/raw/{park_name} (name example: 19TEJ_2025_11_2_B08.tif)
-    - B04 and B08 .tif files (mosaiced if needed) in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+    - B04 and B08 .tif files (mosaicked if needed) in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
 
 Usage:
     python3 tile_ingest.py --park yosemite --year 2025 --month 11
@@ -19,13 +19,14 @@ import itertools
 import subprocess
 import rasterio
 import geopandas as gpd
-from sqlalchemy import create_engine, text
+import xml.etree.ElementTree as ET
+from db import get_db_connection
 from shapely.ops import unary_union
 from rasterio.merge import merge
 
 from resources.config import RESOURCE_DIR, SENTINEL_PATH, RAW_DATA_DIR, INTERIM_DATA_DIR, DB_URI
 
-logger = logging.getLogger("tile_ingets")
+logger = logging.getLogger(__name__)
 os.environ["GDAL_PAM_ENABLED"] = "NO"
 
 class AWS_INTERFACE:
@@ -33,10 +34,10 @@ class AWS_INTERFACE:
     def __init__(self):
         try:
             with open(RESOURCE_DIR / "tile_info_cache.json", 'r', encoding='utf-8') as f:
-                self.tile_day_cache = json.load(f)
-            logger.info(f"Successfully loadded {RESOURCE_DIR / "tile_info_cache.json"}")
+                self.tile_month_cache = json.load(f)
+            logger.info(f"Successfully loaded {RESOURCE_DIR / "tile_info_cache.json"}")
         except:
-            self.tile_day_cache = {}
+            self.tile_month_cache = {}
             logger.warning(f"Failed to load {RESOURCE_DIR / "tile_info_cache.json"}. Process will continue but may be slower than usual.")
         self.aws_bucket ="s3://sentinel-s2-l2a/tiles"
         self.aws_args = ["--no-sign-request"]
@@ -88,75 +89,110 @@ class AWS_INTERFACE:
         folders = [l.split()[-1].replace("/", "") for l in lines if l.strip().startswith("PRE")]
         return folders
 
-    def tile_day_passes(self, tile_path:str, day, max_cloud=10, min_coverage=80) -> bool:
+    def get_tile_score(self, tile_path: str, day: str) -> float | None:
         """
-        Determine if a tile for given month/day meets cloud and coverage criteria, store results
+        Score a single tile based on cloud and nodata percentage.
+        Lower score = better tile.
+        Returns None if metadata cannot be read.
+
+        Score = CLOUDY_PIXEL_PERCENTAGE + NODATA_PIXEL_PERCENTAGE
+        Range: 0 (perfect) to 200 (worst possible)
 
         Parameters
         ----------
         tile_path : str
-            path of s3 cli call, eg: s3://sentinel-s2-l2a/tiles/11/S/KC/2025/11/
-        day: int or str
-            day of the month being testsed (e.g. 10)
-        max_cloud: int
-            max cloud coverage allowed for tile to pass (default 10)
-        min_coverage: int
-            minimum data coverage allowed for tile to pass (default 80)
-        
+            S3 path to tile
+        day : str
+            day of month
+
         Returns
         ----------
-        bool: tile pass or fail
+        float: tile score or None if metadata unavailable
         """
-        day = str(day)  
-        # reuse previous result
-        if self.tile_day_cache.get(tile_path):
-            if day in self.tile_day_cache[tile_path]:
-                return self.tile_day_cache[tile_path][day]
-        else:
-            self.tile_day_cache[tile_path] = {}
-
-        # build the path to tileinfo.json (for simplicity just use index 0)
-        tileinfo_path = f"{tile_path}{day}/0/tileInfo.json"
-        # use aws cli to get file content
-        cmd = ["aws", "s3", "cp", tileinfo_path, "-"] + self.aws_args
+        metadata_path = f"{tile_path}{day}/0/metadata.xml"
+        cmd = ["aws", "s3", "cp", metadata_path, "-"] + self.aws_args
         result = subprocess.run(cmd, capture_output=True, text=True)
-        # missing file → fail
+
         if result.returncode != 0:
-            self.tile_day_cache[tile_path][day] = False
-            logger.info(f'File not found at {cmd}')
-            return False
+            logger.warning(f"Could not read metadata.xml for {tile_path}{day}")
+            return None
 
-        info = json.loads(result.stdout)
-        cloud = info.get("cloudyPixelPercentage", 100)
-        data = info.get("dataCoveragePercentage", 0)
-        passes = (cloud <= max_cloud and data >= min_coverage)
-        self.tile_day_cache[tile_path][day] = passes
-        if not passes:
-            logger.info(f'Failed Cloud or data coverage check: cloud_coverage={cloud}, data_coverage={data}')
-        return passes
+        try:
+            tree = ET.fromstring(result.stdout)
+            cloud_pct = float(tree.findtext(".//CLOUDY_PIXEL_PERCENTAGE") or 100)
+            nodata_pct = float(tree.findtext(".//NODATA_PIXEL_PERCENTAGE") or 100)
+            score = cloud_pct + nodata_pct
+            logger.info(f"{tile_path}{day} — cloud: {cloud_pct:.1f}%, nodata: {nodata_pct:.1f}%, score: {score:.1f}")
+            return score
+        except Exception as e:
+            logger.warning(f"Could not parse metadata.xml for {tile_path}{day}: {e}")
+            return None
 
-    def find_best_tile(self,tile_list:list, year, month, max_cloud=10, min_coverage=80) -> tuple:
+
+    def get_combo_score(self, combo: list, day: str, year, month) -> float | None:
         """
-        Find first L2A tile for given month/day meeting cloud and coverage criteria
+        Score a tile combination for a given day.
+        Scores on a weighted sum of the metadata score (The first tile in a combo covers the most area and so on)
+        Returns None if any tile metadata is unavailable.
+
+        Parameters
+        ----------
+        combo : list
+            list of tile names in combination
+        day : str
+            day of month
+
+        Returns
+        ----------
+        float: combo score or None if any tile is unavailable
+        """
+        scores = []
+        for tile in combo:
+            zone, lat_band, grid_square = self.break_down_tile(tile)
+            tile_path = f"{self.aws_bucket}/{zone}/{lat_band}/{grid_square}/{year}/{month}/"
+            score = self.get_tile_score(tile_path, day)
+            if score is None:
+                return None
+            scores.append(score)
+
+        # weight by position — first tile covers most of park so weighted highest
+        # weights: 1 tile = [1.0], 2 tiles = [0.7, 0.3], 3 tiles = [0.6, 0.3, 0.1]
+        weights = [1.0, 0.7, 0.5, 0.4, 0.3]
+        tile_weights = weights[:len(scores)]
+        # normalize so they sum to 1
+        total = sum(tile_weights)
+        tile_weights = [w / total for w in tile_weights]
+
+        weighted_score = sum(s * w for s, w in zip(scores, tile_weights))
+        logger.info(f"Combo {combo} day {day} — weighted score: {weighted_score:.1f}")
+        return weighted_score
+
+    def find_best_tile(self, tile_list: list, year, month, max_score: float = 150.0) -> tuple:
+        """
+        Find the best tile combination for a given month by scoring all available days
+        and selecting the lowest scoring (cleanest) combination.
+
+        Score = CLOUDY_PIXEL_PERCENTAGE + NODATA_PIXEL_PERCENTAGE per tile,
+        combo score = worst average tile score in combination.
+
 
         Parameters
         ----------
         tile_list : list of lists
-            list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+            list of every combination of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
         year: int or str
             year being looked at (e.g. 2025)
         month: int or str
             month being looked at (e.g. 11)
-        max_cloud: int
-            max cloud coverage allowed for tile to pass (default 10)
-        min_coverage: int
-            minimum data coverage allowed for tile to pass (default 80)
+        max_score: float
+            maximum acceptable score — combos above this are rejected entirely (default 150)
+            Set high to always return best available, lower to enforce quality floor.
         
         Returns
         ----------
         (tile_combination: list, day: str): tuple
             tile_combination: list of the best tile combination found
-            day: day of the month that worked for all tiles
+            day: day with best score for that combination
         """
         for combo in tile_list:
             logger.info(f'Checking tile combination {combo}...')
@@ -171,20 +207,39 @@ class AWS_INTERFACE:
                 else:
                     candidate_days = list(set(candidate_days).intersection(set(days)))
             candidate_days = sorted(candidate_days, key=int)
+            best_combo_score = float("inf")
+            best_combo_day = None
             for day in candidate_days:
-                logger.info(f'Checking day {day}...')
-                all_tiles_good = True
-                for tile in combo:
-                    # if a day fails then break and move to the next day
-                    zone, lat_band, grid_square = self.break_down_tile(tile)
-                    tile_path = f"{self.aws_bucket}/{zone}/{lat_band}/{grid_square}/{year}/{month}/"
-                    if not self.tile_day_passes(tile_path, day, max_cloud, min_coverage):
-                        all_tiles_good = False
-                        break
-                if all_tiles_good:
-                    logger.info(f"Found combo {combo} on day {day}")
-                    return combo, day
-        logger.warning("ABORTING RUN IN 'find_best_tile': Could Not find any tile combination that works for given park.")
+                cache_key = f"{'/'.join(combo)}/{year}/{month}/{day}"
+                if cache_key in self.tile_month_cache:
+                    score = self.tile_month_cache[cache_key]["score"]
+                    logger.info(f"Cache hit: {cache_key} score {score:.1f}")
+                else:
+                    score = self.get_combo_score(combo, day, year, month)
+                    if score is None:
+                        continue
+                    self.tile_month_cache[cache_key] = {
+                        "combo": combo,
+                        "year": int(year),
+                        "month": int(month),
+                        "day": day,
+                        "score": score
+                    }
+
+                if score < best_combo_score:
+                    best_combo_score = score
+                    best_combo_day = day
+            # if this combo has an acceptable day, use it and stop checking combos
+            if best_combo_day is not None and best_combo_score <= max_score:
+                logger.info(f"Selected combo {combo} on day {best_combo_day} with score {best_combo_score:.1f}")
+                return combo, best_combo_day
+
+            logger.info(f"No acceptable day found for combo {combo}, trying next...")
+
+        logger.warning(
+            f"ABORTING RUN IN 'find_best_tile': "
+            f"No acceptable tile found for {year}/{month}."
+        )
         return None, None
 
     def download_tile_jp2s(self, tile_data:dict, output_dir, bands=['B04','B08']) -> None:
@@ -231,7 +286,7 @@ def check_if_needed_files_exist(required_tiles:list, park:str, year, month) -> l
     Parameters
     ----------
     required_tiles : list of lists
-            list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+            list of every combination of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
     park: str
         park being looked at (e.g. yosemite)
     year: int or str
@@ -262,7 +317,7 @@ def check_if_needed_files_exist(required_tiles:list, park:str, year, month) -> l
             return combo
     return []
         
-def find_tiles(park_name:str) -> list:
+def find_tiles(park_name: str) -> list:
     """
     Return list of lists of tile combinations that cover the full park area based on the sentinel_shapefile
 
@@ -274,43 +329,56 @@ def find_tiles(park_name:str) -> list:
     Returns
     ----------
     list of lists
-        list of every combonation of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
+        list of every combination of tiles that will cover a whole park (e.g. [['tileA'], ['tileB','tileC'], ...])
     """
     # load sentinel shapefile
     tiles_gdf = gpd.read_file(SENTINEL_PATH)
     if tiles_gdf.empty:
         logger.error(f"Error in find_tiles: Issue opening Sentinel Shapefile at {SENTINEL_PATH}")
         raise ValueError(f"Issue opening Sentinel Shapefile at {SENTINEL_PATH}")
-    # connect to PostGIS
-    engine = create_engine(DB_URI)
-    # pull park boundary
-    query = f"""
-        SELECT geom
-        FROM parks_validated
-        WHERE park_name ILIKE '{park_name}%'
-    """
-    park_gdf = gpd.read_postgis(text(query), engine, geom_col="geom")
-    if park_gdf.empty:
+
+    # pull park boundary via psycopg2 to avoid pandas/SQLAlchemy version issues
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT ST_AsEWKB(geom) as geom
+                FROM parks_validated
+                WHERE park_name ILIKE '{park_name}%'
+            """)
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
         logger.warning(f"ABORTING RUN IN 'find_tiles': No {park_name} geometry found in database.")
         raise ValueError(f"No {park_name} geometry found in database.")
+
+    from shapely import wkb
+    geometries = [wkb.loads(bytes(row[0])) for row in rows]
+    park_gdf = gpd.GeoDataFrame(geometry=geometries, crs="EPSG:4326")
+
     park_gdf = park_gdf.to_crs(tiles_gdf.crs)
-    park_geom = park_gdf.geom.iloc[0]   
+    park_geom = park_gdf.geometry.iloc[0]
+
     # get intersecting tiles
     intersecting_tiles = tiles_gdf[tiles_gdf.intersects(park_geom)].copy()
-    # reproject those tiles and find the intersecton area in m^2
+
+    # re-project those tiles and find the intersection area in m^2
     utm_crs = park_gdf.estimate_utm_crs()
     park_proj = park_gdf.to_crs(utm_crs)
     park_proj_geom = park_proj.geometry.iloc[0]
     tiles_proj = intersecting_tiles.to_crs(utm_crs)
     tiles_proj["intersection_geom"] = tiles_proj.geometry.intersection(park_proj_geom)
     tiles_proj["intersection_area"] = tiles_proj["intersection_geom"].area
-    # get every combination of full coverage in order from least to most tiles (sub-order by coverage area)
+
+    # get every combination of full coverage in order from least to most tiles
     tiles_proj = tiles_proj.sort_values(by="intersection_area")
     geoms = tiles_proj.geometry.tolist()
     names = tiles_proj["Name"].tolist()
     n = len(geoms)
     list_of_lists = []
-    for r in range(1, n+1):
+    for r in range(1, n + 1):
         for combo_indices in itertools.combinations(range(n), r):
             combined = unary_union([geoms[i] for i in combo_indices])
             if combined.contains(park_proj_geom):
@@ -320,7 +388,7 @@ def find_tiles(park_name:str) -> list:
 
 def generate_tif(input_files:list, output_folder) -> None:
     """
-    Generate a tif file for each band of given input files. If multiple files then they will be moasiced (based on band) from input file list
+    Generate a tif file for each band of given input files. If multiple files then they will be mosaicked (based on band) from input file list
 
     Parameters
     ----------
@@ -334,7 +402,7 @@ def generate_tif(input_files:list, output_folder) -> None:
         raise ValueError("No input files provided to generate_tif")
     if not os.path.isdir(output_folder):
         os.makedirs(output_folder, exist_ok=True)
-    # sort by band into seperate lists
+    # sort by band into separate lists
     tile_dict = {}
     for i in input_files:
         band = str(i).split('_')[-1]
@@ -420,13 +488,13 @@ def ingest_tiles(park:str, year, month) -> None:
     required_tiles = find_tiles(park)
     # check if any of those combo are already saved locally
     combo = check_if_needed_files_exist(required_tiles, park, year, month)
-    # if no suitable local files, retreive them using aws s3 cli
+    # if no suitable local files, retrieve them using aws s3 cli
     if not combo:
         logger.info(f'No suitable combination of files are currently downloaded for {park} on {year}-{month}')
         logger.info("Searching AWS S3 for suitable tiles...")
         # Init the aws interface and search for tiles that meet our constraints
         aws_interface = AWS_INTERFACE()
-        combo, day = aws_interface.find_best_tile(required_tiles,year,month,max_cloud=10, min_coverage=80)
+        combo, day = aws_interface.find_best_tile(required_tiles,year,month,max_score=150)
         if not combo or not day:
             return
         output_path = os.path.join(RAW_DATA_DIR, park.lower())
@@ -443,7 +511,7 @@ def ingest_tiles(park:str, year, month) -> None:
         try:
             logger.info(f"Updating {RESOURCE_DIR / "tile_info_cache.json"} with new tile info")
             with open(RESOURCE_DIR /"tile_info_cache.json", 'w') as f:
-                json.dump(aws_interface.tile_day_cache, f, indent=4)
+                json.dump(aws_interface.tile_month_cache, f, indent=4)
         except:
             logger.warning(f"Failed to update {RESOURCE_DIR / "tile_info_cache.json"}")
     else:

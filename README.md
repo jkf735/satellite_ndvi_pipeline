@@ -69,10 +69,10 @@ duckdb warehouse/warehouse.db
 .help
 ```
 
-<!-- TODO **4. Launch the dashboard**
+**4. Launch the dashboard**
 ```bash
 streamlit run dashboard/app.py
-``` -->
+```
 
 ---
 
@@ -222,8 +222,8 @@ satellite-ndvi-pipeline/
 │   ├── tests/                  # Warehouse data quality tests
 │   └── warehouse.db            # Local DuckDB warehouse
 │
-<!-- TODO ├── dashboard/
-│   └── app.py                  # Streamlit dashboard -->
+├── dashboard/
+│   └── app.py                  # Streamlit dashboard
 │
 ├── .env.example                # Environment variable template
 ├── Makefile                    # Pipeline commands

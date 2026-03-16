@@ -4,7 +4,7 @@ Calculates NDVI from B04 and B08 .tif files
 
 Inputs: 
    - Park_name, year, month
-   - coresponding B04.tif and B08.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
+   - corresponding B04.tif and B08.tif file to be present in data/interim/{park_name} (name example: 2025_11_2_B08_mosaic.tif)
 Outputs: 
    - NDVI.tif file created in data/interim/{park_name} (name example: 2025_11_2_NDVI.tif)
 
@@ -143,7 +143,7 @@ def compute_ndvi_from_tif(red_path: str, nir_path: str, output_path: str) -> boo
         ndvi_qa(ndvi)
 
         # prepare output profile
-        logger.info("Writting To Output...")
+        logger.info("Writing To Output...")
         profile = red_src.profile.copy()
         profile.update(
             driver="GTiff",
@@ -242,7 +242,7 @@ def main(park=None, year=None, month=None):
     if complete:
         logging.info(f'COMPLETED NDVI COMPUTATION {park}, {year}, {month}')
     else:
-        logging.info(f'NDVI GENERATION SPKIPPED: file alread exists for {park}, {year}, {month} at {output_path}')
+        logging.info(f'NDVI GENERATION SKIPPED: file already exists for {park}, {year}, {month} at {output_path}')
 
 if __name__ == "__main__":
     main()

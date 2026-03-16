@@ -46,7 +46,7 @@ def extract_from_parquet(parquet_dir: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     ndvi_df = pd.read_parquet(os.path.join(parquet_dir, "park_ndvi_stats.parquet"))
     # align columns to match Postgres extract queries
     parks_df = parks_df[["park_code", "park_name"]].rename(columns={"park_name": "unit_name"})
-    ndvi_df = ndvi_df[["park_code", "date", "mean_ndvi", "std_ndvi"]]
+    ndvi_df = ndvi_df[["park_code", "date", "mean_ndvi", "std_ndvi", "source_raster"]]
     return parks_df, ndvi_df
 
 def extract_table(query: str) -> pd.DataFrame:
@@ -176,7 +176,7 @@ def main(quickstart: bool = False, parquet_dir: str = "data/quickstart"):
         """)
         logger.info("Extracting park_ndvi_stats...")
         ndvi_df = extract_table("""
-            SELECT park_code, date, mean_ndvi, std_ndvi
+            SELECT park_code, date, mean_ndvi, std_ndvi, source_raster
             FROM park_ndvi_stats
         """)
 

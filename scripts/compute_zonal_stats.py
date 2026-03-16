@@ -55,8 +55,10 @@ def compute_zonal_stats(conn: psycopg2.extensions.connection, tif_path: str) -> 
     obs_date = date(int(year), int(month), int(day))
 
     with rasterio.open(tif_path) as src:
-        ndvi = src.read(1)
-
+        ndvi = src.read(1, masked=True).astype(float)
+        ndvi = ndvi.filled(np.nan)
+    # get rid of small % of sentinal dead data
+    ndvi[ndvi < -0.4] = np.nan
     valid_values = ndvi[~np.isnan(ndvi)]
 
     if valid_values.size == 0:
