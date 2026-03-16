@@ -1,7 +1,7 @@
 import os
 os.environ["AWS_NO_SIGN_REQUEST"] = "YES"
 
-from titiler.application import app
+from titiler.application.main import app
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
