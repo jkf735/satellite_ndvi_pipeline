@@ -1,5 +1,21 @@
 import streamlit as st
 from pathlib import Path
+import subprocess
+import sys
+from pathlib import Path
+
+warehouse_path = Path(__file__).parent.parent / "warehouse" / "warehouse.db"
+
+if not warehouse_path.exists():
+    st.info("Building warehouse for first time... this may take a minute.")
+    result = subprocess.run(
+        [sys.executable, "quickstart.py"],
+        capture_output=False
+    )
+    if result.returncode != 0:
+        st.error("Failed to build warehouse.")
+        st.stop()
+    st.rerun()
 
 st.set_page_config(
     page_title="National Parks NDVI Dashboard",
