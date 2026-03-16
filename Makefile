@@ -4,7 +4,7 @@ LOG_SIZE_LIMIT = 50M
 LOG_DIR=logs
 
 
-.PHONY: up down reset logs psql clean_logs init full ingest_tiles ndvi clip zonal_stats warehouse s3_cog_upload s3_stac_upload s3_stats_export quickstart
+.PHONY: up down reset logs psql clean_logs init full ingest_tiles ndvi clip zonal_stats warehouse s3_cog_upload s3_stac_upload s3_stats_export quickstart dashboard titiler
 
 # DOCKER PROCESSES
 up:
@@ -95,3 +95,9 @@ warehouse: clean_logs
 # QUICKSTART
 quickstart:
 	python3 quickstart.py $(if $(filter true True 1,$(OVERWRITE)),--overwrite,)
+
+# DASHBOARD:
+dashboard:
+	streamlit run dashboard/app.py
+titiler:
+	uvicorn dashboard.titiler_app:app --host localhost --port 8001

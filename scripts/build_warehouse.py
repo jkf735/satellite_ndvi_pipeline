@@ -176,7 +176,7 @@ def main(quickstart: bool = False, parquet_dir: str = "data/quickstart"):
         """)
         logger.info("Extracting park_ndvi_stats...")
         ndvi_df = extract_table("""
-            SELECT park_code, date, mean_ndvi, std_ndvi
+            SELECT park_code, date, mean_ndvi, std_ndvi, source_raster
             FROM park_ndvi_stats
         """)
 
