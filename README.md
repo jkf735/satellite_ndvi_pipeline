@@ -48,7 +48,7 @@ cd satellite-ndvi-pipeline
 
 **2. Install dependencies**
 ```bash
-pip install -r requirements-base.txt
+pip install -r requirements.txt
 ```
 
 **3. Run quickstart**
@@ -227,7 +227,7 @@ satellite-ndvi-pipeline/
 │
 ├── .env.example                # Environment variable template
 ├── Makefile                    # Pipeline commands
-├── requirements-base.txt       # Quick start dependencies
+├── requirements.txt       # Quick start dependencies
 ├── requirements-full.txt       # Full pipeline dependencies
 └── README.md
 ```
