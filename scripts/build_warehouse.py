@@ -22,7 +22,6 @@ import logging
 import duckdb
 import argparse
 import pandas as pd
-from db import get_db_connection
 
 from resources.config import WAREHOUSE_DB, MODELS_DIR
 
@@ -63,6 +62,7 @@ def extract_table(query: str) -> pd.DataFrame:
     dataframe:
         result dataframe
     """
+    from db import get_db_connection
     conn = get_db_connection()
     try:
         df = pd.read_sql(query, conn)
