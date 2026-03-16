@@ -45,9 +45,11 @@ for i, row in declining_df.iterrows():
     mean_ndvi = monthly_df[monthly_df["park_code"] == row["park_code"]]["avg_ndvi"].mean()
 
     trend_emoji = {"declining": "📉", "improving": "📈", "stable": "➡️"}.get(row["trend_label"], "➡️")
+    delta_color = "normal" if row["trend_label"] == "improving" else "inverse" if row["trend_label"] == "declining" else "off"
+    delta_arrow = "up" if row["trend_label"] == "improving" else "down" if row["trend_label"] == "declining" else "off"
 
     with cols[i % 3]:
-        st.metric(label=row["unit_name"], value=f"{mean_ndvi:.3f}", delta=f"{row['trend_label']} {trend_emoji}")
+        st.metric(label=row["unit_name"], value=f"{mean_ndvi:.3f}", delta=f"{row['trend_label']} {trend_emoji}",delta_color=delta_color, delta_arrow=delta_arrow)
         st.caption(f"Anomalous months: {anomaly_count}")
 
 st.markdown("---")
@@ -70,7 +72,7 @@ fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     legend_title_text="Park"
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
 
 # ── NDVI Distribution ─────────────────────────────────────────────────────────
 
@@ -88,4 +90,4 @@ fig2.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     showlegend=False
 )
-st.plotly_chart(fig2, use_container_width=True)
+st.plotly_chart(fig2, width='stretch')

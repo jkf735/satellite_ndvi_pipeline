@@ -7,7 +7,7 @@ from dashboard.db import query
 
 st.set_page_config(page_title="Seasonality", layout="wide")
 st.title("Seasonal NDVI Patterns")
-st.markdown("Average NDVI by month across all parks — highlights ecological contrast between ecosystems.")
+st.markdown("Average NDVI by month across all parks.")
 
 # ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -51,11 +51,4 @@ fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     legend_title_text="Park"
 )
-st.plotly_chart(fig, use_container_width=True)
-
-st.markdown("""
-**Reading this chart:**
-- **Yosemite** peaks in summer after Sierra Nevada snowmelt
-- **Zion** shows low, flat NDVI typical of desert canyon ecosystems  
-- **Acadia** peaks sharply in summer — classic New England deciduous pattern
-""")
+st.plotly_chart(fig, width='stretch')

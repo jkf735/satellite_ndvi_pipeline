@@ -2,6 +2,7 @@
 # Python / Scripts
 # -----------------------------
 __pycache__/
+*.vscode/
 *.pyc
 *.pyo
 *.pyd

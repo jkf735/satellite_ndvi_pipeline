@@ -1,5 +1,6 @@
 import streamlit as st
 import plotly.graph_objects as go
+import pandas as pd
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -22,7 +23,7 @@ def load_data():
     anomalies = query("""
         SELECT a.park_code, a.date_key, a.mean_ndvi, a.z_score
         FROM marts.mart_ndvi_anomalies a
-        WHERE ABS(a.z_score) > 2
+        WHERE ABS(a.z_score) > 1.5
     """)
     return trend, anomalies
 
@@ -68,6 +69,16 @@ if not park_anomalies.empty:
         marker=dict(color="#d62728", size=10, symbol="x")
     ))
 
+fig.add_vline(
+    x=pd.Timestamp("2022-01-24").timestamp() * 1000,
+    line_dash="dash",
+    line_color="rgba(255,255,255,0.4)",
+    line_width=1.5,
+    annotation_text="ESA Processing Baseline Change (N0400→N0500)",
+    annotation_position="top right",
+    annotation_font=dict(size=10, color="rgba(255,255,255,0.6)")
+)
+
 fig.update_layout(
     title=f"{selected_name} — Monthly NDVI (2022–2026)",
     xaxis_title="Date",
@@ -76,4 +87,4 @@ fig.update_layout(
     paper_bgcolor="rgba(0,0,0,0)",
     legend=dict(orientation="h", yanchor="bottom", y=1.02)
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width='stretch')
