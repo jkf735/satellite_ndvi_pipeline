@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from streamlit_folium import st_folium
 import folium
@@ -18,7 +19,7 @@ st.set_page_config(page_title="NDVI Map", layout="wide")
 st.title("NDVI Map")
 st.markdown("Spatial NDVI distribution streamed directly from S3 COGs via Titiler.")
 
-TITILER_URL = "http://localhost:8001"
+TITILER_URL = os.getenv("TITILER_URL", "http://localhost:8001")
 COLORMAP = "rdylgn"
 RESCALE = "-0.2,0.8"
 
