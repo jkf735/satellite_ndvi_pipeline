@@ -153,7 +153,8 @@ with map_col:
     colorscale = cm.LinearColormap(
         colors=["red", "yellow", "green"],
         vmin=-0.2, vmax=0.8,
-        caption="NDVI"
+        caption="NDVI",
+        text_color = "white"
     )
     colorscale.add_to(m)
 

@@ -1,9 +1,14 @@
+import os
 import streamlit as st
 from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+import requests
+import threading
 
+TITILER_URL = os.getenv("TITILER_URL", "http://localhost:8001")
+
+# Load warehouse if it doesn't exit
 warehouse_path = Path(__file__).parent.parent / "warehouse" / "warehouse.db"
 
 if not warehouse_path.exists():
@@ -23,6 +28,19 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ping titiler in background so map page is ready sooner
+def ping_titiler():
+    """Ping Titiler in background to wake up Render instance."""
+    try:
+        requests.get(f"{TITILER_URL}/healthz", timeout=30)
+    except Exception:
+        pass  # silent fail — just a warm-up ping
+
+# fire and forget on page load
+thread = threading.Thread(target=ping_titiler, daemon=True)
+thread.start()
+
 
 st.title("🌿 National Parks NDVI Dashboard")
 st.markdown("""
